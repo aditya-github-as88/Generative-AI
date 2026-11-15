@@ -1,0 +1,22 @@
+# ----------------------------------------------------------------------
+# requirements.txt — third-party packages for nltk_text_preprocessing
+# Install with:  pip install -r requirements.txt
+# After install, run:  python -m utils.setup_resources   (NLTK data files)
+# ----------------------------------------------------------------------
+
+# Core (data handling)
+pandas>=2.0
+
+# NLP
+nltk>=3.9
+beautifulsoup4>=4.12
+
+# Visualization
+matplotlib>=3.7
+seaborn>=0.13
+
+# Configuration
+python-dotenv>=1.0
+
+# Dev / Test
+pytest>=7.0

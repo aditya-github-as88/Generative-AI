@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Secrets / local settings ---
+.env
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Generated files (keep the folders) ---
+outputs/*
+!outputs/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Large real dataset (about 63 MB). Remove this line if you want to commit it. ---
+# data/raw/IMDB_Dataset.csv
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
