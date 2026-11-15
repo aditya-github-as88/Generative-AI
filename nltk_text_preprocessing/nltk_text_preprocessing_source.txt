@@ -1,0 +1,2808 @@
+================================================================================
+PROJECT SOURCE BUNDLE: nltk_text_preprocessing
+================================================================================
+
+HOW TO USE THIS FILE
+1. Create the folders shown in the PROJECT STRUCTURE below.
+2. For each block, create the file named on the 'FILE:' line.
+3. Copy the text between 'BEGIN FILE' and 'END FILE' into that file.
+4. Follow README.md (section 3) to set up and run the project.
+
+================================================================================
+PROJECT STRUCTURE
+================================================================================
+nltk_text_preprocessing/
+├── config/
+│   ├── __init__.py
+│   └── settings.py
+├── data/
+│   ├── processed/
+│   │   └── .gitkeep
+│   ├── raw/
+│   │   └── all-data.csv   [IGNORED: data file, not in this .txt]
+│   └── README.md
+├── outputs/
+│   ├── figures/
+│   │   └── .gitkeep
+│   └── .gitkeep
+├── src/
+│   ├── __init__.py
+│   ├── data_loader.py
+│   ├── eda.py
+│   ├── normalization.py
+│   ├── pipeline.py
+│   ├── stopword_removal.py
+│   ├── text_cleaning.py
+│   └── tokenization.py
+├── tests/
+│   ├── __init__.py
+│   └── test_smoke.py
+├── utils/
+│   ├── __init__.py
+│   ├── logger.py
+│   └── setup_resources.py
+├── .env.example
+├── .gitignore
+├── CHANGES.md
+├── knowledge.md
+├── main.py
+├── pyproject.toml
+├── README.md
+└── requirements.txt
+
+================================================================================
+FILES INCLUDED BELOW (23)
+================================================================================
+   1. README.md
+   2. requirements.txt
+   3. pyproject.toml
+   4. .env.example
+   5. .gitignore
+   6. main.py
+   7. CHANGES.md
+   8. knowledge.md
+   9. config/__init__.py
+  10. config/settings.py
+  11. utils/__init__.py
+  12. utils/logger.py
+  13. utils/setup_resources.py
+  14. src/__init__.py
+  15. src/data_loader.py
+  16. src/eda.py
+  17. src/normalization.py
+  18. src/pipeline.py
+  19. src/stopword_removal.py
+  20. src/text_cleaning.py
+  21. src/tokenization.py
+  22. tests/test_smoke.py
+  23. data/README.md
+
+FILES NOT INCLUDED
+  - data/raw/all-data.csv  -> IGNORED: data file, it cannot be transformed to .txt format.
+  - tests/__init__.py  -> empty file. Create it as an empty file.
+  - data/processed/.gitkeep  -> empty file. Create it as an empty file.
+  - outputs/.gitkeep  -> empty file. Create it as an empty file.
+  - outputs/figures/.gitkeep  -> empty file. Create it as an empty file.
+
+
+################################################################################
+# FILE 1/23: README.md
+################################################################################
+# ----- BEGIN FILE: README.md -----
+# NLTK Text Preprocessing (Sentiment Analysis for Financial News)
+
+This project cleans financial news sentences (the `all-data.csv` sentiment dataset) with the Natural Language Toolkit (`nltk`). It removes HTML, special characters and stop words, and it reduces words to stems.
+
+You learn the standard text preprocessing steps that come before a language model or a sentiment classifier.
+
+The code comes from the notebook *Text Preprocessing using NLTK* (Advanced Certification Programme in Agentic and Generative AI, IISc and TalentSprint).
+
+---
+
+## 1. Prerequisites
+
+| Item | Version / detail |
+|---|---|
+| Python | 3.10 or later |
+| Git | Any recent version |
+| VS Code | With the **Python** extension (Microsoft) |
+| VS Code extension (optional) | **Markdown Preview Mermaid Support**, to see the diagrams in `knowledge.md` |
+| Internet connection | Needed one time, to install packages and NLTK data |
+| API key | Not needed. This project uses no paid service. |
+
+---
+
+## 2. Project Structure
+
+```
+nltk_text_preprocessing/
+├── README.md                  # This file
+├── knowledge.md               # Theory behind each step
+├── CHANGES.md                 # Differences from the notebook
+├── requirements.txt           # Third-party packages
+├── pyproject.toml             # Makes the project installable
+├── .env.example               # Template for optional settings
+├── .gitignore                 # Files that Git ignores
+├── main.py                    # Entry point: runs all stages
+├── config/
+│   ├── __init__.py
+│   └── settings.py            # Paths, constants, flags
+├── utils/
+│   ├── __init__.py
+│   ├── logger.py              # Shared log format
+│   └── setup_resources.py     # Downloads NLTK data files
+├── src/
+│   ├── __init__.py
+│   ├── data_loader.py         # Reads the CSV
+│   ├── eda.py                 # Summary and bar chart
+│   ├── text_cleaning.py       # HTML, brackets, special characters
+│   ├── normalization.py       # Lemmatization and stemming
+│   ├── tokenization.py        # Tokens and POS tags
+│   ├── stopword_removal.py    # Stop words (keeps negations)
+│   └── pipeline.py            # Demos and the full cleaning pipeline
+├── data/
+│   ├── README.md              # Data manifest
+│   ├── raw/                   # Input CSV (placeholder now)
+│   └── processed/             # Cleaned CSV (generated)
+├── outputs/
+│   └── figures/               # Charts (generated)
+└── tests/
+    ├── __init__.py
+    └── test_smoke.py          # Smoke tests
+```
+
+| Folder / File | Purpose | Example content |
+|---|---|---|
+| `config/` | Keeps all settings in one place | `DATASET_PATH`, `SPECIAL_CHAR_PATTERN` |
+| `utils/` | Keeps helpers that are not specific to text cleaning | `get_logger()`, `ensure_nltk_resources()` |
+| `src/` | Keeps the text-processing logic | `strip_html()`, `simple_stemmer()` |
+| `data/raw/` | Keeps the input data | `all-data.csv` |
+| `data/processed/` | Keeps the cleaned data | `all-data_preprocessed.csv` |
+| `outputs/figures/` | Keeps the charts | `sentiment_distribution.png` |
+| `tests/` | Keeps the tests | `test_smoke.py` |
+| `main.py` | Runs the stages in order | `python main.py` |
+
+**NOTE:** This project has no `database/` folder and no LLM client. The notebook uses no database and no API.
+
+---
+
+## 3. Setup Procedure
+
+Do these steps one time.
+
+### 3.1 Get the code
+
+1. Open a terminal.
+2. Clone the repository:
+   ```bash
+   git clone <your-repository-url>
+   ```
+3. Go into the project folder:
+   ```bash
+   cd nltk_text_preprocessing
+   ```
+4. Open the folder in VS Code:
+   ```bash
+   code .
+   ```
+
+### 3.2 Create and activate a virtual environment
+
+1. Create the virtual environment:
+
+   | Operating system | Command |
+   |---|---|
+   | Windows | `python -m venv .venv` |
+   | macOS / Linux | `python3 -m venv .venv` |
+
+2. Activate the virtual environment:
+
+   | Operating system | Command |
+   |---|---|
+   | Windows (PowerShell) | `.venv\Scripts\Activate.ps1` |
+   | Windows (Command Prompt) | `.venv\Scripts\activate.bat` |
+   | macOS / Linux | `source .venv/bin/activate` |
+
+3. Make sure that the prompt starts with `(.venv)`.
+
+**CAUTION:** On Windows, PowerShell can block the activation script. If this occurs, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then try again.
+
+### 3.3 Select the interpreter in VS Code
+
+1. Push `Ctrl+Shift+P` (macOS: `Cmd+Shift+P`).
+2. Type `Python: Select Interpreter`.
+3. Select the interpreter in `.venv`.
+
+### 3.4 Install the packages
+
+1. Install the third-party packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Install the project in editable mode:
+   ```bash
+   pip install -e .
+   ```
+
+### 3.5 Download the NLTK data files
+
+1. Run this command:
+   ```bash
+   python -m utils.setup_resources
+   ```
+2. Make sure that the last line says `All NLTK resources are ready.`
+
+**NOTE:** `main.py` also does this step automatically. The step downloads only the missing files.
+
+### 3.6 Make the settings file (optional)
+
+1. Copy the template:
+
+   | Operating system | Command |
+   |---|---|
+   | Windows | `copy .env.example .env` |
+   | macOS / Linux | `cp .env.example .env` |
+
+2. Change the values in `.env` if necessary. All values are optional.
+
+### 3.7 Check the data
+
+The input file is `data/raw/all-data.csv` (Sentiment Analysis for Financial News). It has no header row and uses Latin-1 encoding. For details, read `data/README.md`.
+
+---
+
+## 4. Run Procedure
+
+### 4.1 Run the full pipeline
+
+```bash
+python main.py
+```
+
+**CAUTION:** The current file has 500 rows and runs in a few seconds. With the full Kaggle dataset (about 4,800 rows), stemming takes longer. To test quickly, use `--sample`.
+
+### 4.2 Run one stage
+
+| Command | What it does |
+|---|---|
+| `python main.py --step load` | Reads the CSV and shows the first 10 rows |
+| `python main.py --step eda` | Shows the summary and saves the bar chart |
+| `python main.py --step demo` | Runs each technique on the notebook example sentences |
+| `python main.py --step preprocess` | Cleans every review and saves the result |
+| `python main.py --sample 2000` | Uses only the first 2,000 reviews |
+| `python main.py --show-plots` | Opens the chart in a window as well |
+
+### 4.3 Run one module alone
+
+Each `src` module has a small demo:
+
+```bash
+python -m src.text_cleaning
+python -m src.normalization
+python -m src.tokenization
+python -m src.stopword_removal
+```
+
+### 4.4 Run the tests
+
+```bash
+pytest
+```
+
+The expected result is `22 passed`.
+
+### 4.5 Expected output (short sample)
+
+```text
+[2] Load the dataset
+(500, 2)
+...
+--- simple_stemmer ---
+he like lemon banana and oranges. he goe to market.
+...
+--- remove_stopwords ---
+movie not great
+...
+[5] Preprocess every review
+                                              review sentiment
+0  accord gran compani ha plan move product russi...   neutral
+1  technopoli plan develop stage area less 100000...   neutral
+...
+SUMMARY
+1. setup: all NLTK resources are ready
+2. load: read 500 reviews from all-data.csv
+3. eda: class counts printed, chart saved to .../outputs/figures/sentiment_distribution.png
+4. demo: ran 10 technique examples from the notebook
+5. preprocess: cleaned 500 reviews, saved to .../data/processed/all-data_preprocessed.csv
+```
+
+---
+
+## 5. Execution Flow
+
+This list shows what occurs when you run `python main.py`.
+
+1. Python starts `main.py`.
+2. `main.py` imports `config/settings.py`. `settings.py` builds all paths and reads `.env`, if it exists.
+3. `main.py` imports `utils/logger.py`. Each module uses `get_logger()` to write log lines.
+4. **Stage 1 (setup):** `main.py` calls `utils/setup_resources.ensure_nltk_resources()`. The function downloads the missing NLTK data files.
+5. **Stage 2 (load):** `main.py` calls `src/data_loader.load_dataset()`.
+   1. `load_dataset()` calls `config/settings.validate_settings()`. This function checks that the CSV exists.
+   2. `load_dataset()` reads `data/raw/all-data.csv` with `pandas` (no header row, Latin-1 encoding) and names the columns `sentiment` and `review`.
+   3. `load_dataset()` calls `is_placeholder_data()`. If the marker file exists, it writes a WARNING.
+   4. `main.py` calls `get_review()` to show review number 5.
+6. **Stage 3 (eda):** `main.py` calls `src/eda.py`.
+   1. `describe_dataset()` returns the summary table.
+   2. `sentiment_counts()` counts the positive and negative reviews.
+   3. `plot_sentiment_distribution()` writes `outputs/figures/sentiment_distribution.png`.
+7. **Stage 4 (demo):** `main.py` calls `src/pipeline.run_demos()`. This function calls each technique one time on the notebook example sentences:
+   - `src/text_cleaning.py`: `strip_html()`, `remove_between_square_brackets()`, `remove_special_characters()`
+   - `src/normalization.py`: `lemmatize_word()`, `simple_stemmer()`
+   - `src/tokenization.py`: `tokenize()`, `pos_tag_tokens()`
+   - `src/stopword_removal.py`: `get_stopword_list()`, `get_updated_stopword_list()`, `remove_stopwords()`
+8. **Stage 5 (preprocess):** `main.py` calls `src/pipeline.preprocess_reviews()`. This function applies 4 steps to each review, in this order:
+   1. `src/text_cleaning.denoise_text()`
+   2. `src/text_cleaning.remove_special_characters()`
+   3. `src/normalization.simple_stemmer()`
+   4. `src/stopword_removal.remove_stopwords()`. This function calls `src/tokenization.tokenize()`.
+9. `main.py` calls `src/pipeline.save_processed()`. This function writes `data/processed/all-data_preprocessed.csv`.
+10. `main.py` prints a numbered summary.
+
+`tests/test_smoke.py` runs only when you run `pytest`. It imports each module and checks the notebook outputs.
+
+---
+
+## 6. File Reference
+
+| File | Main functions | Called by | Calls | Reads / Writes |
+|---|---|---|---|---|
+| `main.py` | `main()`, `parse_args()`, `stage_load()`, `stage_eda()`, `stage_demo()`, `stage_preprocess()` | You (command line), `tests/test_smoke.py` | All `src` modules, `utils/setup_resources.py` | Prints to the terminal |
+| `config/settings.py` | `validate_settings()` | All modules | Nothing in the project | Reads `.env` |
+| `utils/logger.py` | `get_logger()` | All modules with logs | `config/settings.py` | Writes log lines to the terminal |
+| `utils/setup_resources.py` | `ensure_nltk_resources()` | `main.py`, tests | `nltk.download()` | Writes NLTK data files |
+| `src/data_loader.py` | `load_dataset()`, `is_placeholder_data()`, `get_review()` | `main.py`, tests | `config/settings.validate_settings()` | Reads `data/raw/all-data.csv` |
+| `src/eda.py` | `describe_dataset()`, `sentiment_counts()`, `plot_sentiment_distribution()` | `main.py`, tests | `seaborn`, `matplotlib` | Writes `outputs/figures/sentiment_distribution.png` |
+| `src/text_cleaning.py` | `strip_html()`, `remove_between_square_brackets()`, `denoise_text()`, `remove_special_characters()` | `src/pipeline.py` | `BeautifulSoup`, `re` | Nothing |
+| `src/normalization.py` | `lemmatize_word()`, `simple_stemmer()` | `src/pipeline.py` | `WordNetLemmatizer`, `PorterStemmer` | Reads NLTK `wordnet` data |
+| `src/tokenization.py` | `tokenize()`, `pos_tag_tokens()` | `src/pipeline.py`, `src/stopword_removal.py` | `word_tokenize`, `nltk.pos_tag` | Reads NLTK `punkt_tab` and tagger data |
+| `src/stopword_removal.py` | `get_stopword_list()`, `build_updated_stopword_list()`, `get_updated_stopword_list()`, `remove_stopwords()` | `src/pipeline.py` | `src/tokenization.tokenize()` | Reads NLTK `stopwords` data |
+| `src/pipeline.py` | `run_demos()`, `preprocess_reviews()`, `save_processed()` | `main.py` | All other `src` modules | Writes `data/processed/all-data_preprocessed.csv` |
+| `tests/test_smoke.py` | 22 tests | `pytest` | All modules | Writes temporary files only |
+
+---
+
+## 7. Configuration Reference
+
+All settings are in `config/settings.py`. Some settings also come from `.env`.
+
+| Name | Default | Purpose | Safe to change? |
+|---|---|---|---|
+| `PROJECT_ROOT` | Folder of the project | Base for all paths | No |
+| `DATA_DIR`, `RAW_DIR`, `PROCESSED_DIR` | `data/`, `data/raw/`, `data/processed/` | Data folders | No |
+| `OUTPUT_DIR`, `FIGURES_DIR` | `outputs/`, `outputs/figures/` | Output folders | No |
+| `DATASET_FILENAME` | `all-data.csv` | Name of the input file | Yes, if your file has a different name |
+| `DATASET_PATH` | `data/raw/all-data.csv` | Full path of the input file | Use `--data` instead |
+| `DATASET_ENCODING` | `latin-1` | Text encoding of the input file | Only if your file uses another encoding |
+| `DATASET_HAS_HEADER` | `False` | Whether the first CSV line has column names | Only if your file has a header row |
+| `CSV_COLUMN_ORDER` | `("sentiment", "review")` | Column order in a file without a header | Only if your file has a different order |
+| `PLACEHOLDER_MARKER_PATH` | `data/raw/all-data.PLACEHOLDER.md` | Marker that shows placeholder data (not present) | No |
+| `PROCESSED_DATASET_PATH` | `data/processed/all-data_preprocessed.csv` | Output CSV | Yes |
+| `SENTIMENT_PLOT_PATH` | `outputs/figures/sentiment_distribution.png` | Output chart | Yes |
+| `DATASET_SOURCE_URL` | Kaggle "Sentiment Analysis for Financial News" page | Reference only | Yes |
+| `TEXT_COLUMN` | `review` | Column with the text | Only if your CSV is different |
+| `LABEL_COLUMN` | `sentiment` | Column with the label | Only if your CSV is different |
+| `PREVIEW_ROWS` | `10` | Rows shown by the load stage | Yes |
+| `SAMPLE_REVIEW_INDEX` | `5` | Review shown by the load stage | Yes |
+| `NLTK_RESOURCES` | 6 names | NLTK data files to download | No |
+| `NLTK_DATA_DIR` | `NLTK_DATA` in `.env`, or NLTK default | Folder for NLTK data | Yes |
+| `SPECIAL_CHAR_PATTERN` | `[^a-zA-Z0-9\s]` | Characters to remove | Yes, for experiments |
+| `STOPWORD_LANGUAGE` | `english` | Stop-word list language | Yes |
+| `NEGATION_WORD` | `not` | Stop word to keep | Yes, for experiments |
+| `NEGATION_SUFFIX` | `n't` | Stop words with this ending stay | Yes, for experiments |
+| `DEMO_*` (8 values) | Notebook example sentences | Inputs for the demo stage | Yes |
+| `SHOW_PLOTS` | `false` (`.env`) | Open the chart in a window | Yes |
+| `SAMPLE_SIZE` | empty = all rows (`.env`) | Use only the first N reviews | Yes |
+| `LOG_LEVEL` | `INFO` (`.env`) | Amount of log output | Yes |
+
+---
+
+## 8. Data Status
+
+| File | Status | Action |
+|---|---|---|
+| `data/raw/all-data.csv` | Real data, 500 rows (394 positive, 102 neutral, 4 negative) | No action. See `data/README.md`. |
+
+---
+
+## 9. Troubleshooting
+
+| Symptom | Cause | Action |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'nltk'` (or `pandas`, `bs4`) | The packages are not installed in the active environment. | Activate `.venv`. Then run `pip install -r requirements.txt`. |
+| `ModuleNotFoundError: No module named 'config'` (or `src`) | Python runs from a different folder. | Run commands from the project folder. Run `pip install -e .`. |
+| VS Code shows yellow lines under imports | VS Code uses the wrong interpreter. | Select the `.venv` interpreter (section 3.3). |
+| `LookupError: Resource punkt_tab not found` (or `stopwords`, `wordnet`) | The NLTK data files are missing. | Run `python -m utils.setup_resources`. |
+| `Missing NLTK resources: ...` | The download failed. | Check the internet connection. Then run `python -m utils.setup_resources` again. |
+| `ERROR: Dataset not found` | The CSV is not in `data/raw/`. | Put `all-data.csv` in `data/raw/`. |
+| `UnicodeDecodeError: 'utf-8' codec can't decode` | The file is read with the wrong encoding. | Keep `DATASET_ENCODING = "latin-1"` in `config/settings.py`. |
+| `WARNING ... PLACEHOLDER DATA` | The placeholder marker file exists. | Delete `data/raw/all-data.PLACEHOLDER.md`. |
+| `ValueError: ... must have the columns` | The CSV has a header row or a different column order. | Check `DATASET_HAS_HEADER` and `CSV_COLUMN_ORDER` in `config/settings.py`. |
+| The run stops for minutes at `simple_stemmer` | Stemming a large file takes time. | Wait, or use `--sample 500`. |
+| `pip` shows a version conflict | Old packages are in the environment. | Delete `.venv`. Do sections 3.2 and 3.4 again. |
+| No chart window opens | `SHOW_PLOTS` is `false` by default. | Use `--show-plots`. The PNG file is always saved. |
+| PowerShell blocks `Activate.ps1` | The execution policy blocks scripts. | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
+
+---
+
+## 10. Glossary
+
+| Term | Definition |
+|---|---|
+| Corpus | A large collection of text. NLTK gives many corpora, for example the stop-word lists. |
+| DataFrame | A `pandas` table with rows and named columns. |
+| EDA (Exploratory Data Analysis) | A first look at a dataset: size, values, and class counts. |
+| HTML tag | A markup code in angle brackets, for example `<br />`. It is not part of the visible text. |
+| Lemma | The dictionary form of a word. The lemma of "better" (adjective) is "good". |
+| Lemmatization | The process that changes a word to its lemma. It uses a dictionary (WordNet). |
+| Negation | A word that reverses the meaning, for example "not" or "didn't". |
+| NLTK | Natural Language Toolkit. A Python library for work with human language. |
+| Noise | Text that has no value for the task, for example HTML tags. |
+| POS tag | Part-of-speech tag. A label for the word class, for example `NN` (noun) or `VBG` (verb, -ing form). |
+| Regular expression | A pattern that matches a set of strings. Python uses the `re` module for it. |
+| Sentiment | The opinion in a text: positive or negative. |
+| Special character | A character that is not a letter, a digit or whitespace, for example `!` or `?`. |
+| Stem | The part of a word that stays after a rule removes the suffix. The stem of "likes" is "like". |
+| Stemming | The process that cuts word endings by fixed rules. It does not use a dictionary. |
+| Stop word | A very common word with little meaning, for example "the", "is", "he". |
+| Token | One unit of text after tokenization: a word, a number or a punctuation mark. |
+| Tokenization | The process that splits text into tokens. |
+| Virtual environment | A folder with its own Python and packages, separate from other projects. |
+| WordNet | A large English dictionary database that NLTK uses for lemmatization. |
+
+---
+
+## 11. Next Steps
+
+1. Read `knowledge.md`. It explains the theory behind each step, with diagrams and examples.
+2. Read `CHANGES.md`. It lists each difference from the original notebook.
+3. Try a change: move `remove_stopwords` before `simple_stemmer` in `src/pipeline.py` (`PREPROCESSING_STEPS`). Then compare the output. `knowledge.md` section 10 explains the result.
+# ----- END FILE: README.md -----
+
+################################################################################
+# FILE 2/23: requirements.txt
+################################################################################
+# ----- BEGIN FILE: requirements.txt -----
+# ----------------------------------------------------------------------
+# requirements.txt — third-party packages for nltk_text_preprocessing
+# Install with:  pip install -r requirements.txt
+# After install, run:  python -m utils.setup_resources   (NLTK data files)
+# ----------------------------------------------------------------------
+
+# Core (data handling)
+pandas>=2.0
+
+# NLP
+nltk>=3.9
+beautifulsoup4>=4.12
+
+# Visualization
+matplotlib>=3.7
+seaborn>=0.13
+
+# Configuration
+python-dotenv>=1.0
+
+# Dev / Test
+pytest>=7.0
+# ----- END FILE: requirements.txt -----
+
+################################################################################
+# FILE 3/23: pyproject.toml
+################################################################################
+# ----- BEGIN FILE: pyproject.toml -----
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nltk_text_preprocessing"
+version = "0.1.0"
+description = "Text preprocessing of financial news sentiment data with NLTK (converted from an IISc / TalentSprint Colab notebook)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "nltk>=3.9",
+    "beautifulsoup4>=4.12",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+include = ["config*", "utils*", "src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# ----- END FILE: pyproject.toml -----
+
+################################################################################
+# FILE 4/23: .env.example
+################################################################################
+# ----- BEGIN FILE: .env.example -----
+# Copy this file to `.env` and change the values if you need to.
+# This project uses NO API keys. All settings below are optional.
+
+# Show plots in a window as well as saving them (true / false).
+SHOW_PLOTS=false
+
+# Process only the first N reviews (empty = all rows).
+# TIP: a large dataset can take a while to stem; set a small number to test quickly.
+SAMPLE_SIZE=
+
+# Folder where NLTK keeps its data files (empty = NLTK default location).
+NLTK_DATA=
+
+# Log level: DEBUG, INFO, WARNING, ERROR
+LOG_LEVEL=INFO
+# ----- END FILE: .env.example -----
+
+################################################################################
+# FILE 5/23: .gitignore
+################################################################################
+# ----- BEGIN FILE: .gitignore -----
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Secrets / local settings ---
+.env
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Generated files (keep the folders) ---
+outputs/*
+!outputs/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Raw dataset. Remove the `#` below if you do NOT want to commit it. ---
+# data/raw/all-data.csv
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+# ----- END FILE: .gitignore -----
+
+################################################################################
+# FILE 6/23: main.py
+################################################################################
+# ----- BEGIN FILE: main.py -----
+"""Single entry point: run the full text-preprocessing tutorial.
+
+Usage:
+    python main.py                       # run every stage
+    python main.py --step demo           # run one stage only
+    python main.py --sample 2000         # use the first 2,000 reviews
+    python main.py --show-plots          # also open the chart window
+
+Stages (in order):
+    1. setup       - download missing NLTK resources
+    2. load        - read data/raw/all-data.csv
+    3. eda         - summary, class counts, bar chart
+    4. demo        - each NLTK technique on the notebook's example sentences
+    5. preprocess  - clean every review and save to data/processed/
+
+This file only orchestrates. The logic lives in ``src/`` and ``utils/``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+from config import settings
+from src.data_loader import get_review, load_dataset
+from src.eda import describe_dataset, plot_sentiment_distribution, sentiment_counts
+from src.pipeline import preprocess_reviews, run_demos, save_processed
+from utils.logger import get_logger
+from utils.setup_resources import ensure_nltk_resources
+
+logger = get_logger("main")
+
+STEPS = ("all", "load", "eda", "demo", "preprocess")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Read the command-line arguments. Every argument has a default."""
+    parser = argparse.ArgumentParser(
+        description="Text preprocessing of financial news sentences with NLTK."
+    )
+    parser.add_argument(
+        "--step", choices=STEPS, default="all",
+        help="Run one stage only (default: all).",
+    )
+    parser.add_argument(
+        "--data", type=Path, default=settings.DATASET_PATH,
+        help=f"Path to the dataset CSV (default: {settings.DATASET_PATH}).",
+    )
+    parser.add_argument(
+        "--sample", type=int, default=settings.SAMPLE_SIZE,
+        help="Use only the first N reviews (default: all rows, or SAMPLE_SIZE in .env).",
+    )
+    parser.add_argument(
+        "--show-plots", action="store_true", default=settings.SHOW_PLOTS,
+        help="Open the chart in a window as well as saving it.",
+    )
+    return parser.parse_args(argv)
+
+
+def _print_header(number: int, title: str) -> None:
+    print(f"\n{'=' * 70}\n[{number}] {title}\n{'=' * 70}")
+
+
+def stage_load(data_path: Path, sample: int | None) -> pd.DataFrame:
+    _print_header(2, "Load the dataset")
+    df = load_dataset(data_path, sample_size=sample)
+    print(df.shape)
+    print(df.head(settings.PREVIEW_ROWS))
+    print(f"\nReview #{settings.SAMPLE_REVIEW_INDEX}:")
+    print(get_review(df, settings.SAMPLE_REVIEW_INDEX))
+    return df
+
+
+def stage_eda(df: pd.DataFrame, show_plots: bool) -> Path:
+    _print_header(3, "Exploratory Data Analysis")
+    print(describe_dataset(df))
+    counts = sentiment_counts(df)
+    print()
+    print(counts)
+    print(counts.values)
+    return plot_sentiment_distribution(df, show=show_plots)
+
+
+def stage_demo() -> dict[str, object]:
+    _print_header(4, "NLTK technique demos (notebook examples)")
+    results = run_demos()
+    for name, value in results.items():
+        print(f"\n--- {name} ---")
+        print(value)
+    return results
+
+
+def stage_preprocess(df: pd.DataFrame) -> tuple[pd.DataFrame, Path]:
+    _print_header(5, "Preprocess every review")
+    if len(df) > 5000:
+        logger.info(
+            "Processing %d reviews. The stemming step can take 2-3 minutes.", len(df)
+        )
+    cleaned = preprocess_reviews(df)
+    print(cleaned.head())
+    path = save_processed(cleaned)
+    return cleaned, path
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run the selected stages and print a numbered summary.
+
+    Returns:
+        Process exit code: 0 on success, 1 on a known error.
+    """
+    args = parse_args(argv)
+    summary: list[str] = []
+
+    try:
+        _print_header(1, "Set up NLTK resources")
+        missing = ensure_nltk_resources()
+        if missing:
+            print("Missing NLTK resources: " + ", ".join(missing))
+            print("Action: connect to the internet and run: python -m utils.setup_resources")
+            return 1
+        summary.append("setup: all NLTK resources are ready")
+
+        df: pd.DataFrame | None = None
+        if args.step in ("all", "load", "eda", "preprocess"):
+            df = stage_load(args.data, args.sample)
+            summary.append(f"load: read {len(df)} reviews from {args.data.name}")
+
+        if args.step in ("all", "eda") and df is not None:
+            plot_path = stage_eda(df, args.show_plots)
+            summary.append(f"eda: class counts printed, chart saved to {plot_path}")
+
+        if args.step in ("all", "demo"):
+            stage_demo()
+            summary.append("demo: ran 10 technique examples from the notebook")
+
+        if args.step in ("all", "preprocess") and df is not None:
+            cleaned, out_path = stage_preprocess(df)
+            summary.append(f"preprocess: cleaned {len(cleaned)} reviews, saved to {out_path}")
+
+    except (FileNotFoundError, ValueError) as error:
+        print(f"\nERROR: {error}")
+        return 1
+
+    print(f"\n{'=' * 70}\nSUMMARY\n{'=' * 70}")
+    for number, line in enumerate(summary, start=1):
+        print(f"{number}. {line}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+# ----- END FILE: main.py -----
+
+################################################################################
+# FILE 7/23: CHANGES.md
+################################################################################
+# ----- BEGIN FILE: CHANGES.md -----
+# CHANGES
+
+This file lists each difference between the original notebook and this package.
+
+- **Source:** `IISC_2_Text_Preprocessing_using_NLTK_M1.ipynb` (Colab PDF export, 9 pages).
+- **Format of each entry:** *File → What changed → Why*.
+
+## 1. Notebook-only code that we converted
+
+| # | File | What changed | Why |
+|---|---|---|---|
+| 1 | `utils/setup_resources.py` | The six `nltk.download(...)` lines became `ensure_nltk_resources()`. The function downloads only missing resources. | A package must not download data each time a module is imported. |
+| 2 | `data/raw/IMDB_Dataset.csv` | The hidden cell "Download the IMDB Movie Review dataset" became a manual step in `data/README.md`. A placeholder CSV is in its place. | The PDF shows "Show code" but not the code or the URL. We do not invent a URL. |
+| 3 | `src/data_loader.py` | `pd.read_csv('IMDB_Dataset.csv')` now reads `data/raw/IMDB_Dataset.csv` through `config/settings.py`. | Colab used the current folder. A package needs a fixed path from `PROJECT_ROOT`. |
+| 4 | `main.py` | `df.head(10)`, `df.describe()`, `df.head()` and other bare expressions became `print(...)`. | A bare expression shows output only in a notebook. |
+| 5 | `src/eda.py` | `sns.barplot(...)` now saves the chart to `outputs/figures/sentiment_distribution.png`. A flag (`SHOW_PLOTS`, `--show-plots`) opens a window as well. | A script has no inline plot area. |
+| 6 | `src/pipeline.py` | The four `df['review'] = df['review'].apply(...)` cells became `preprocess_reviews()`. It returns a new DataFrame. | No hidden global state. The input DataFrame stays unchanged. |
+| 7 | `src/stopword_removal.py` | The global `updated_stopword_list` became `get_updated_stopword_list()` (cached). `remove_stopwords()` has a new optional parameter `stopword_list`. | Function parameters replace global variables. The default gives the notebook behavior. |
+| 8 | `src/pipeline.py` | The cleaned data is saved to `data/processed/IMDB_Dataset_preprocessed.csv`. | In the notebook the result stayed in memory. A file lets the next tutorial use it. |
+| 9 | `main.py` | The cell-by-cell flow became 5 stages with `argparse` (`--step`, `--data`, `--sample`, `--show-plots`). | One command runs the tutorial. One stage can run alone for a demo. |
+
+## 2. Changes for speed or safety (same output)
+
+| # | File | What changed | Why |
+|---|---|---|---|
+| 10 | `src/normalization.py` | `simple_stemmer()` uses one shared `PorterStemmer`. The notebook created a new stemmer for each review. | The output is the same. The run is faster on 50,000 reviews. |
+| 11 | `src/stopword_removal.py` | `remove_stopwords()` checks tokens against a `set`, not a `list`. | The output is the same. A set lookup is faster. |
+| 12 | `src/text_cleaning.py` | `remove_special_characters()` uses a pre-compiled regular expression. | The output is the same. |
+| 13 | `src/text_cleaning.py` | `warnings.filterwarnings('ignore')` (all warnings) became a filter for `MarkupResemblesLocatorWarning` only. | To hide all warnings can hide real problems. BeautifulSoup gives only this warning on short reviews. |
+
+## 3. Code that we removed
+
+| # | Notebook code | Why |
+|---|---|---|
+| 14 | `import numpy as np` | The notebook does not use `np`. |
+| 15 | `import string` | The notebook does not use `string`. |
+| 16 | `nltk.porter.PorterStemmer()` inside `simple_stemmer()` | The notebook imported `PorterStemmer` but did not use the import. The package uses the import. It is the same class. |
+| 17 | `df['sentiment'].value_counts().values` as a separate cell | `main.py` prints it inside the EDA stage. Nothing is lost. |
+
+## 4. Behavior that we kept on purpose (not a defect in the code)
+
+| # | Behavior | Where it is explained |
+|---|---|---|
+| 18 | Stemming runs **before** stop-word removal. So stems such as `thi`, `wa`, `ha` stay in the text, because they are not in the stop-word list. The notebook output shows this too (`"thought thi wa wonder way"`). | `knowledge.md` section 10 |
+| 19 | Special-character removal runs **before** stop-word removal. So `didn't` becomes `didnt`. The negation stays in the text, but it is not the word `not`. | `knowledge.md` sections 4 and 9 |
+| 20 | Lemmatization, tokenization (alone) and POS tagging are demos only. The notebook does not apply them to the dataset. | `knowledge.md` sections 5, 7, 8 |
+
+## 5. Reconstruction from the PDF
+
+| # | Item | Result |
+|---|---|---|
+| 21 | Code text | All code cells were readable. No line was reconstructed. |
+| 22 | Stop-word list outputs | The PDF cut the printed lists at the page edge. This does not affect code. |
+| 23 | Hidden download cell | Not visible. See entry 2. |
+
+## 6. Assumptions
+
+| # | Assumption |
+|---|---|
+| 24 | `PROJECT_NAME` = `nltk_text_preprocessing`. `TOPIC` = "Text preprocessing with NLTK". `PYTHON_VERSION` = 3.10. `LLM_PROVIDER` = none. `RUN_TARGET` = local VS Code. |
+| 25 | Versions are floors (`>=`), because the notebook does not show package versions. The package was tested with nltk 3.10.4, pandas 3.0.5, seaborn 0.13.2, matplotlib 3.11.2, beautifulsoup4 4.15.0. |
+| 26 | The notebook uses no API, so the package has no `database/`, `utils/llm_client.py` or `utils/tools.py`. |
+
+## Dataset change: IMDB -> Sentiment Analysis for Financial News
+
+The project now uses `data/raw/all-data.csv` (Sentiment Analysis for Financial News) instead of the IMDB movie review dataset. The rows above describe the original IMDB version.
+
+| # | File | Change | Why |
+|---|---|---|---|
+| 1 | `config/settings.py` | `DATASET_FILENAME` is `all-data.csv`. New settings `DATASET_ENCODING` (`latin-1`), `DATASET_HAS_HEADER` (`False`) and `CSV_COLUMN_ORDER`. The output file is `all-data_preprocessed.csv`. | The new file has no header row and is not UTF-8. |
+| 2 | `src/data_loader.py` | Reads the CSV with `header=None`, explicit column names and Latin-1 encoding, then reorders the columns to `review, sentiment`. | Keeps the internal column names, so the rest of the pipeline is unchanged. |
+| 3 | `src/eda.py` | Chart title is "Sentiment distribution". | The new dataset has 3 classes, not 2. |
+| 4 | `README.md`, `data/README.md`, `knowledge.md`, `.env.example`, `.gitignore`, `pyproject.toml`, `main.py` | IMDB references now point to `all-data.csv`. | Documentation matches the data. |
+# ----- END FILE: CHANGES.md -----
+
+################################################################################
+# FILE 8/23: knowledge.md
+################################################################################
+# ----- BEGIN FILE: knowledge.md -----
+# Knowledge Guide: Text Preprocessing with NLTK
+
+This guide explains what each part of the code does and why it is necessary. Read it together with the code. Each function docstring has a "Why:" line that points to a section here.
+
+**NOTE:** To see the diagrams in VS Code, install the extension **Markdown Preview Mermaid Support**. GitHub shows the diagrams automatically.
+
+---
+
+## Overview
+
+Computers cannot use raw review text directly. Raw text contains HTML tags, punctuation, many forms of one word, and many common words with little meaning. Text preprocessing removes this noise and makes the words uniform. The result is a smaller, cleaner text that a classifier or a language model can use better. This project applies these steps to the financial news sentences in `all-data.csv` (Sentiment Analysis for Financial News) with the `nltk` library.
+
+**Role in Generative AI:** NLTK does not generate text. It cleans and structures text before a model uses it. It can also analyze model outputs, for example keyword frequency or repetition.
+
+---
+
+## Concept Map
+
+This diagram shows how the concepts of text preprocessing relate to each other (theory level).
+
+```mermaid
+graph TD
+    A[Raw text] --> B[Noise removal]
+    B --> C[Special character removal]
+    C --> D[Normalization]
+    D --> D1[Stemming]
+    D --> D2[Lemmatization]
+    A --> E[Tokenization]
+    E --> F[POS tagging]
+    F -. gives pos to .-> D2
+    E --> G[Stop-word removal]
+    G --> H[Negation handling]
+    D1 --> I[Clean text]
+    G --> I
+    I --> J[Model or analysis]
+```
+
+---
+
+## System Workflow
+
+This diagram shows how the data moves from `data/raw` through the `src` modules to the outputs.
+
+```mermaid
+flowchart LR
+    R[(data/raw/all-data.csv)] --> L[data_loader.load_dataset]
+    L --> E[eda.py]
+    E --> P[(outputs/figures/*.png)]
+    L --> D[text_cleaning.denoise_text]
+    D --> S[text_cleaning.remove_special_characters]
+    S --> T[normalization.simple_stemmer]
+    T --> W[stopword_removal.remove_stopwords]
+    W --> O[(data/processed/*.csv)]
+```
+
+---
+
+## Module Dependency Graph
+
+This diagram shows which module imports which module. An arrow means "imports".
+
+```mermaid
+graph TD
+    main[main.py] --> pipeline[src.pipeline]
+    main --> loader[src.data_loader]
+    main --> eda[src.eda]
+    main --> setup[utils.setup_resources]
+    pipeline --> cleaning[src.text_cleaning]
+    pipeline --> norm[src.normalization]
+    pipeline --> tok[src.tokenization]
+    pipeline --> stop[src.stopword_removal]
+    stop --> tok
+    loader --> logger[utils.logger]
+    pipeline --> logger
+    setup --> logger
+    logger --> settings[config.settings]
+    loader --> settings
+    cleaning --> settings
+```
+
+The layers are: `config` → `utils` → `src` → `main.py`. A lower layer never imports a higher layer. This rule prevents circular imports.
+
+---
+
+## Call Sequence
+
+This diagram shows the function calls of one full run (`python main.py`).
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant M as main.py
+    participant R as setup_resources
+    participant DL as data_loader
+    participant E as eda
+    participant P as pipeline
+    U->>M: python main.py
+    M->>R: ensure_nltk_resources()
+    R-->>M: missing = []
+    M->>DL: load_dataset(path)
+    DL-->>M: DataFrame
+    M->>E: describe, counts, plot
+    E-->>M: PNG path
+    M->>P: run_demos()
+    P-->>M: demo results
+    M->>P: preprocess_reviews(df)
+    P-->>M: cleaned DataFrame
+    M->>P: save_processed(cleaned)
+    M-->>U: numbered summary
+```
+
+---
+
+## Concept Sections
+
+### 0. Supporting Code
+
+**Where in code:** `utils/logger.py` → `get_logger()`; `utils/setup_resources.py` → `ensure_nltk_resources()`; `config/settings.py`
+**Called by:** all modules, `main.py` | **Calls:** `logging`, `nltk.download()`
+
+**What it does (1–3 sentences):**
+`settings.py` keeps all paths and constants. `get_logger()` gives each module the same log format. `ensure_nltk_resources()` downloads the NLTK data files that are missing.
+
+**Why it is necessary (1–3 sentences):**
+`pip install nltk` installs only the code. The stop-word lists, the tokenizer model, WordNet and the tagger model are separate data files. Without them, NLTK functions stop with a `LookupError`.
+
+**Theory:**
+- NLTK keeps data in a folder named `nltk_data`.
+- `nltk.data.find()` looks for a resource in that folder.
+- `nltk.download()` gets a resource from the NLTK data server.
+- The function checks first and downloads only when necessary. So a second run does not use the network.
+
+| Resource | Used by | Purpose |
+|---|---|---|
+| `stopwords` | `get_stopword_list()` | Stop-word lists for many languages |
+| `punkt`, `punkt_tab` | `tokenize()` | Tokenizer model. NLTK 3.9 and later use `punkt_tab`. |
+| `wordnet` | `lemmatize_word()` | English dictionary for lemmas |
+| `averaged_perceptron_tagger`, `..._eng` | `pos_tag_tokens()` | POS tagger model. NLTK 3.9 and later use `_eng`. |
+
+**Worked example:**
+First run → 6 resources missing → 6 downloads → `All NLTK resources are ready.`
+Second run → 0 resources missing → 0 downloads.
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `nltk.data.find(candidate)` | Looks for the resource on disk | To skip downloads that are not necessary |
+| `nltk.download(resource, quiet=True)` | Downloads one resource | To get the missing data file |
+| `missing.append(resource)` | Records a failed download | To give a clear error, not a stack trace |
+
+**Common mistakes:**
+- **CAUTION:** Do not call `nltk.download()` at the top of a module. Each import then contacts the server.
+- **CAUTION:** Old tutorials download only `punkt`. NLTK 3.9 and later also need `punkt_tab`.
+
+**Related concepts:** [7. Tokenization](#7-tokenization), [9. Stop-Word Removal](#9-stop-word-removal).
+
+---
+
+### 1. Loading the Dataset
+
+**Where in code:** `src/data_loader.py` → `load_dataset()`, `is_placeholder_data()`, `get_review()`
+**Called by:** `main.stage_load()` | **Calls:** `config.settings.validate_settings()`, `pandas.read_csv()`
+
+**What it does (1–3 sentences):**
+The function reads the CSV file into a `pandas` DataFrame with two columns: `review` and `sentiment`. It checks that the file and the columns exist. It writes a WARNING when the data is placeholder data.
+
+**Why it is necessary (1–3 sentences):**
+All other steps work on the DataFrame. A clear check at the start gives a clear error message. Without the check, an error occurs later and is difficult to understand.
+
+**Theory:**
+- A CSV file keeps a table as plain text. A comma separates the columns.
+- A review can contain commas. So the CSV puts such a review between double quotes.
+- `pd.read_csv()` reads the quotes correctly and makes one row per review.
+- The financial news dataset is a **3-class sentiment classification** dataset. Each sentence has one label: `positive`, `neutral` or `negative`.
+- `all-data.csv` has **no header row** and uses **Latin-1** encoding. So the code calls `pd.read_csv(path, header=None, names=[...], encoding="latin-1")`.
+
+**Worked example:**
+Input file (2 rows):
+```
+neutral,"According to Gran , the company has no plans to move all production to Russia ..."
+negative,"The international electronic industry company Elcoteq has laid off tens of employees ..."
+```
+Process: `pd.read_csv(path, header=None, names=["sentiment", "review"], encoding="latin-1")`, then reorder the columns to `review, sentiment`.
+Output: a DataFrame with shape `(2, 2)` and the columns `review` and `sentiment`.
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `validate_settings(path)` | Raises `FileNotFoundError` if the file is missing | To give a clear action to the user |
+| `pd.read_csv(path, header=None, names=list(CSV_COLUMN_ORDER), encoding=DATASET_ENCODING)` | Reads the CSV and names the columns | The file has no header row and is not UTF-8 |
+| `df = df[[TEXT_COLUMN, LABEL_COLUMN]]` | Puts the columns in the order `review, sentiment` | The rest of the pipeline expects these names |
+| `missing = {TEXT_COLUMN, LABEL_COLUMN} - set(df.columns)` | Finds missing columns | To stop early with a clear message |
+| `if is_placeholder_data(...)` | Checks for the marker file | To warn that results are not real |
+| `df.head(sample_size)` | Keeps the first N rows | To make test runs fast |
+
+**Common mistakes:**
+- **CAUTION:** Do not use results from the placeholder data. The 20 reviews are made up.
+- **CAUTION:** If you replace the CSV, delete the marker file too. If you do not, the WARNING stays.
+
+**Related concepts:** [2. Exploratory Data Analysis](#2-exploratory-data-analysis).
+
+---
+
+### 2. Exploratory Data Analysis
+
+**Where in code:** `src/eda.py` → `describe_dataset()`, `sentiment_counts()`, `plot_sentiment_distribution()`
+**Called by:** `main.stage_eda()` | **Calls:** `df.describe()`, `value_counts()`, `seaborn.barplot()`
+
+**What it does (1–3 sentences):**
+The module shows the count, the number of unique values, the most frequent value and its frequency for each column. It counts the reviews per sentiment. It draws a bar chart of the two counts.
+
+**Why it is necessary (1–3 sentences):**
+You must know the data before you clean it. The class balance tells you if a model can learn both classes equally. A balanced dataset makes accuracy a fair measure.
+
+**Theory:**
+- `describe()` on text columns gives: `count`, `unique`, `top`, `freq`.
+- If `unique` < `count`, the dataset has duplicate rows. The current dataset has 499 unique sentences in 500 rows.
+- The class ratio shows the balance:
+
+$$\text{balance ratio} = \frac{n_{\text{minority}}}{n_{\text{majority}}}$$
+
+| Symbol | Meaning |
+|---|---|
+| $n_{\text{minority}}$ | Number of reviews in the smaller class |
+| $n_{\text{majority}}$ | Number of reviews in the larger class |
+
+- A ratio of 1.0 means a perfectly balanced dataset.
+
+**Worked example:**
+Input: `all-data.csv`. Process: `value_counts()`. Output: `positive 394`, `neutral 102`, `negative 4`. Ratio = 4 / 394 ≈ 0.01. The dataset is strongly **imbalanced**: a model sees very few negative examples, so accuracy alone is not a fair measure.
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `df[LABEL_COLUMN].value_counts()` | Counts each label | Notebook: `df['sentiment'].value_counts()` |
+| `matplotlib.use("Agg")` | Selects a backend with no window | To save charts on any computer |
+| `sns.barplot(x=..., y=..., hue=...)` | Draws one bar per label | Notebook code, unchanged |
+| `fig.savefig(save_path)` | Saves the chart as PNG | A script has no inline plot area |
+
+**Common mistakes:**
+- **CAUTION:** Do not skip EDA. An unbalanced dataset needs different metrics, for example the F1 score.
+
+**Related concepts:** [1. Loading the Dataset](#1-loading-the-dataset).
+
+---
+
+### 3. Noise Removal
+
+**Where in code:** `src/text_cleaning.py` → `strip_html()`, `remove_between_square_brackets()`, `denoise_text()`
+**Called by:** `src.pipeline.preprocess_reviews()`, `src.pipeline.run_demos()` | **Calls:** `BeautifulSoup`, `str.replace()`
+
+**What it does (1–3 sentences):**
+`strip_html()` removes HTML tags and keeps the visible text. `remove_between_square_brackets()` removes the characters `[` and `]` but keeps the text inside them. `denoise_text()` runs the two functions in this order.
+
+**Why it is necessary (1–3 sentences):**
+The reviews come from a web site. Many reviews contain `<br />` tags. These tags are not words, and they add false tokens such as `br`.
+
+**Theory:**
+- **Noise** is text that has no value for the task. Examples: HTML and XML markup, file headers and footers, metadata.
+- HTML is a tree of tags. `BeautifulSoup` reads the tree with a parser (`"html.parser"`).
+- `soup.get_text()` collects only the text nodes of the tree. It drops all tags.
+- A regular expression can also remove tags, but it fails on nested or broken HTML. A parser is safer.
+
+**Worked example:**
+| Input | Function | Output |
+|---|---|---|
+| `<h1>This is a test heading.</h1><p>Starting a paragraph here...</p>` | `strip_html()` | `This is a test heading.` / `Starting a paragraph here...` |
+| `I bought [apple, banana, orange] yesterday.` | `remove_between_square_brackets()` | `I bought apple, banana, orange yesterday.` |
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `BeautifulSoup(text, "html.parser")` | Parses the text as HTML | `html.parser` is in the Python standard library. No extra install. |
+| `soup.get_text()` | Returns only the visible text | To drop the tags |
+| `text.replace('[', '')` | Removes each `[` | To keep the words in the brackets |
+| `# return re.sub(r'\[[^]]*\]', '', text)` | Alternative (not used) | It removes the brackets **and** the text inside them |
+
+**Common mistakes:**
+- **CAUTION:** `strip_html()` keeps the newline characters between HTML blocks. Later steps treat newlines as whitespace, so this is not a problem.
+- **CAUTION:** Do not use the regular-expression alternative if the text in brackets has meaning.
+
+**Related concepts:** [4. Special Character Removal](#4-special-character-removal).
+
+---
+
+### 4. Special Character Removal
+
+**Where in code:** `src/text_cleaning.py` → `remove_special_characters()`
+**Called by:** `src.pipeline.preprocess_reviews()`, `src.pipeline.run_demos()` | **Calls:** `re.sub()` (pre-compiled)
+
+**What it does (1–3 sentences):**
+The function removes each character that is not a letter, a digit or whitespace. Punctuation and symbols such as `!`, `?`, `'`, `&` disappear.
+
+**Why it is necessary (1–3 sentences):**
+Punctuation makes different tokens for one word, for example `movie`, `movie.` and `movie!`. The removal makes these tokens the same. It also reduces the vocabulary size.
+
+**Theory:**
+The pattern is `[^a-zA-Z0-9\s]`.
+
+| Part | Meaning |
+|---|---|
+| `[ ... ]` | A character class: one character from the set |
+| `^` (first in the class) | NOT: any character that is not in the set |
+| `a-z` | Lowercase letters |
+| `A-Z` | Uppercase letters |
+| `0-9` | Digits |
+| `\s` | Whitespace: space, tab, newline |
+
+`re.sub(pattern, '', text)` replaces each match with an empty string.
+
+**Worked example:**
+Input: `Hi There! How are you?` → Process: remove `!` and `?` → Output: `Hi There How are you`.
+Input: `I didn't enjoy it.` → Output: `I didnt enjoy it`.
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `re.compile(SPECIAL_CHAR_PATTERN)` | Compiles the pattern one time | It is faster on large datasets |
+| `_SPECIAL_CHAR_REGEX.sub("", text)` | Removes each match | Notebook: `re.sub(pattern, '', text)` |
+
+**Common mistakes:**
+- **CAUTION:** The pattern also removes accented letters, for example `é` in `café` becomes `caf`. For non-English text, change the pattern.
+- **CAUTION:** The apostrophe disappears. So `didn't` becomes `didnt`. The stop-word step then does not see `didn't`. See [9. Stop-Word Removal](#9-stop-word-removal).
+
+**Related concepts:** [3. Noise Removal](#3-noise-removal), [9. Stop-Word Removal](#9-stop-word-removal).
+
+---
+
+### 5. Lemmatization
+
+**Where in code:** `src/normalization.py` → `lemmatize_word()`
+**Called by:** `src.pipeline.run_demos()` (demo only) | **Calls:** `WordNetLemmatizer.lemmatize()`
+
+**What it does (1–3 sentences):**
+The function changes a word to its **lemma**, the dictionary form. It needs the part of speech of the word. For example, `better` as an adjective becomes `good`.
+
+**Why it is necessary (1–3 sentences):**
+One meaning can have many word forms: `am`, `is`, `are`, `was` all have the lemma `be`. Lemmatization joins these forms. The result is always a real word, which a person can read.
+
+**Theory:**
+1. The lemmatizer receives a word and a POS code.
+2. It looks for the word in a WordNet **exception list** for that POS. Irregular forms are in this list (`better` → `good`, `went` → `go`).
+3. If the word is not in the list, it tries **detachment rules** for that POS. For nouns, one rule changes `-ies` to `-y`.
+4. It returns the first candidate that is in the WordNet dictionary.
+5. If no candidate exists, it returns the word unchanged.
+
+| POS code | Meaning |
+|---|---|
+| `n` | noun (default) |
+| `v` | verb |
+| `a` | adjective |
+| `r` | adverb |
+| `s` | satellite adjective |
+
+**Worked example:**
+| Input | POS | Output |
+|---|---|---|
+| `better` | `a` | `good` |
+| `better` | `n` (default) | `better` |
+| `running` | `v` | `run` |
+| `studies` | `n` | `study` |
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `_lemmatizer = WordNetLemmatizer()` | Creates the lemmatizer one time | It loads WordNet on first use |
+| `_lemmatizer.lemmatize(word, pos=pos)` | Returns the lemma | Notebook: `lemmatizer.lemmatize("better", pos="a")` |
+
+**Common mistakes:**
+- **CAUTION:** Without the correct `pos`, the lemmatizer treats each word as a noun. Then most verbs stay unchanged. Use [8. POS Tagging](#8-part-of-speech-tagging) to get the POS.
+- **NOTE:** The notebook does not apply lemmatization to the dataset. It uses stemming. See [6. Stemming](#6-stemming) for the comparison.
+
+**Related concepts:** [6. Stemming](#6-stemming), [8. Part-of-Speech Tagging](#8-part-of-speech-tagging).
+
+---
+
+### 6. Stemming
+
+**Where in code:** `src/normalization.py` → `simple_stemmer()`
+**Called by:** `src.pipeline.preprocess_reviews()`, `src.pipeline.run_demos()` | **Calls:** `PorterStemmer.stem()`
+
+**What it does (1–3 sentences):**
+The function splits the text at whitespace. It reduces each word to a **stem** with the Porter algorithm. It joins the stems with single spaces and returns lowercase text.
+
+**Why it is necessary (1–3 sentences):**
+Stemming reduces the number of different words (the dimensionality). `like`, `likes` and `liked` all become `like`. A model then learns one feature, not three.
+
+**Theory:**
+The Porter stemmer (Martin Porter, 1980) removes suffixes with fixed rules. It uses no dictionary. Each word has the form:
+
+$$[C](VC)^{m}[V]$$
+
+| Symbol | Meaning |
+|---|---|
+| $C$ | A sequence of one or more consonants |
+| $V$ | A sequence of one or more vowels |
+| $m$ | The **measure**: how many times $VC$ repeats |
+| $[\,]$ | An optional part |
+
+Many rules apply only if $m$ is larger than a value. This rule stops the algorithm from cutting short words too much. The algorithm has 5 steps. Step 1a is an example:
+
+| Rule | Example |
+|---|---|
+| `SSES` → `SS` | `caresses` → `caress` |
+| `IES` → `I` | `ponies` → `poni` |
+| `SS` → `SS` | `caress` → `caress` |
+| `S` → (nothing) | `likes` → `like`, `goes` → `goe` |
+
+**Worked example:**
+Input: `He likes lemons bananas and oranges. He goes to market.`
+
+| Word | Stem | Reason |
+|---|---|---|
+| `He` | `he` | NLTK makes the word lowercase |
+| `likes` | `like` | Rule `S` → (nothing) |
+| `lemons` | `lemon` | Rule `S` → (nothing) |
+| `oranges.` | `oranges.` | The word ends in `.`, so no suffix rule matches |
+| `goes` | `goe` | Rule `S` → (nothing). The result is not a real word. |
+
+Output: `he like lemon banana and oranges. he goe to market.`
+
+**Stemming compared with lemmatization:**
+| Property | Stemming | Lemmatization |
+|---|---|---|
+| Method | Fixed suffix rules | Dictionary (WordNet) and rules |
+| Result | Can be a non-word (`goe`, `movi`) | Always a real word |
+| Needs POS | No | Yes, for good results |
+| Speed | Fast | Slower |
+| `better` | `better` | `good` (with `pos="a"`) |
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `_stemmer = PorterStemmer()` | Creates the stemmer one time | The notebook made one per review. The output is the same. |
+| `text.split()` | Splits at whitespace | Simple and fast. Punctuation stays on the word. |
+| `_stemmer.stem(word)` | Returns the stem in lowercase | The Porter rules |
+| `' '.join([...])` | Joins the stems | To return one string |
+
+**Common mistakes:**
+- **CAUTION:** `split()` does not separate punctuation. In the pipeline this is not a problem, because step 4 removes the punctuation first.
+- **CAUTION:** Stems such as `thi` (from `this`) and `wa` (from `was`) are no longer stop words. See [10. The Full Preprocessing Pipeline](#10-the-full-preprocessing-pipeline).
+
+**Related concepts:** [5. Lemmatization](#5-lemmatization), [10. The Full Preprocessing Pipeline](#10-the-full-preprocessing-pipeline).
+
+---
+
+### 7. Tokenization
+
+**Where in code:** `src/tokenization.py` → `tokenize()`
+**Called by:** `src.stopword_removal.remove_stopwords()`, `src.pipeline.run_demos()` | **Calls:** `nltk.tokenize.word_tokenize()`
+
+**What it does (1–3 sentences):**
+The function splits text into **tokens**: words, numbers and punctuation marks. Each punctuation mark becomes a separate token.
+
+**Why it is necessary (1–3 sentences):**
+Most NLP steps work on single words, not on a long string. Stop-word removal, POS tagging and counting all need tokens. Language models also start with tokenization.
+
+**Theory:**
+`word_tokenize()` works in two stages:
+1. The **Punkt** sentence tokenizer splits the text into sentences. Punkt is a trained model. It knows that the `.` in `Dr.` does not end a sentence.
+2. The **Treebank** word tokenizer splits each sentence into tokens with regular expressions. It separates punctuation and splits contractions: `don't` → `do`, `n't`.
+
+**Worked example:**
+Input: `I enjoy playing football in the rain.`
+Output: `['I', 'enjoy', 'playing', 'football', 'in', 'the', 'rain', '.']`
+
+Compare with `str.split()`: `['I', 'enjoy', 'playing', 'football', 'in', 'the', 'rain.']`. Here the period stays on `rain.`.
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `word_tokenize(text)` | Returns a list of tokens | Notebook: `tokens = word_tokenize(...)` |
+
+**Common mistakes:**
+- **CAUTION:** `word_tokenize()` needs the `punkt_tab` resource. If it is missing, you get a `LookupError`. Run `python -m utils.setup_resources`.
+- **NOTE:** Large language models use **subword** tokenizers (for example BPE). They split rare words into smaller parts. NLTK tokens are whole words.
+
+**Related concepts:** [8. Part-of-Speech Tagging](#8-part-of-speech-tagging), [9. Stop-Word Removal](#9-stop-word-removal).
+
+---
+
+### 8. Part-of-Speech Tagging
+
+**Where in code:** `src/tokenization.py` → `pos_tag_tokens()`
+**Called by:** `src.pipeline.run_demos()` (demo only) | **Calls:** `nltk.pos_tag()`
+
+**What it does (1–3 sentences):**
+The function gives each token a **POS tag**: a label for its word class. The tags come from the Penn Treebank tag set.
+
+**Why it is necessary (1–3 sentences):**
+One word form can have different meanings. `book` can be a noun or a verb. The POS tag removes this ambiguity, and the lemmatizer needs it.
+
+**Theory:**
+NLTK uses an **averaged perceptron** tagger. For each token, the tagger:
+1. Collects **features**, for example the word, its suffix, the previous word and the previous tag.
+2. Calculates a score for each possible tag.
+3. Selects the tag with the highest score.
+
+$$\hat{t} = \arg\max_{t} \sum_{f \in F} w_{f,t}$$
+
+| Symbol | Meaning |
+|---|---|
+| $\hat{t}$ | The selected tag |
+| $t$ | One possible tag |
+| $F$ | The set of features of the token |
+| $w_{f,t}$ | The learned weight of feature $f$ for tag $t$ |
+
+"Averaged" means that the final weights are the average of the weights over all training steps. This makes the model more stable.
+
+**Worked example:**
+| Token | Tag | Meaning |
+|---|---|---|
+| `I` | `PRP` | Personal pronoun |
+| `enjoy` | `VBP` | Verb, present, not 3rd person singular |
+| `playing` | `VBG` | Verb, -ing form |
+| `football` | `NN` | Noun, singular |
+| `in` | `IN` | Preposition |
+| `the` | `DT` | Determiner |
+| `rain` | `NN` | Noun, singular |
+| `.` | `.` | Sentence-final punctuation |
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `nltk.pos_tag(tokens)` | Returns `(token, tag)` pairs | Notebook: `tagged = nltk.pos_tag(tokens)` |
+
+**Common mistakes:**
+- **CAUTION:** Penn Treebank tags (`NN`, `VBG`) are not the same as WordNet POS codes (`n`, `v`). To use a tag with the lemmatizer, convert it first: `NN*` → `n`, `VB*` → `v`, `JJ*` → `a`, `RB*` → `r`.
+- **CAUTION:** Tag tokens before you remove stop words or punctuation. The tagger uses the context.
+
+**Related concepts:** [5. Lemmatization](#5-lemmatization), [7. Tokenization](#7-tokenization).
+
+---
+
+### 9. Stop-Word Removal
+
+**Where in code:** `src/stopword_removal.py` → `get_stopword_list()`, `build_updated_stopword_list()`, `get_updated_stopword_list()`, `remove_stopwords()`
+**Called by:** `src.pipeline.preprocess_reviews()`, `src.pipeline.run_demos()` | **Calls:** `nltk.corpus.stopwords.words()`, `src.tokenization.tokenize()`
+
+**What it does (1–3 sentences):**
+The module gets the NLTK English stop-word list. It removes `not` and each word that ends in `n't` from that list. Then `remove_stopwords()` tokenizes a text and drops each token that is in the updated list.
+
+**Why it is necessary (1–3 sentences):**
+Stop words such as `the`, `a`, `is` occur in almost every review. They add little information but many tokens. To remove them makes the data smaller and moves the focus to words with meaning.
+
+**Theory:**
+- Word frequencies in natural language follow **Zipf's law**. A few words occur very often, and most words occur rarely:
+
+$$f(r) \propto \frac{1}{r}$$
+
+| Symbol | Meaning |
+|---|---|
+| $r$ | The rank of a word (1 = the most frequent word) |
+| $f(r)$ | The frequency of the word with rank $r$ |
+| $\propto$ | "is proportional to" |
+
+- The most frequent words are mostly function words. Stop-word lists contain these words.
+- **Negation handling:** the NLTK list contains `not`, `don't`, `didn't` and similar words. For sentiment, these words are important. `not a good movie` without `not` becomes `a good movie`. That reverses the sentiment. So the code keeps them.
+
+**Worked example:**
+Input: `The movie was not that great`
+
+| Token | Lowercase in updated list? | Result |
+|---|---|---|
+| `The` | Yes (`the`) | Removed |
+| `movie` | No | Kept |
+| `was` | Yes | Removed |
+| `not` | No (kept on purpose) | Kept |
+| `that` | Yes | Removed |
+| `great` | No | Kept |
+
+Output: `movie not great`
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `stopwords.words('english')` | Returns the full English list | Notebook: `stopword_list = ...` |
+| `if word == 'not' or word.endswith("n't"): pass` | Skips negation words | To keep the sentiment |
+| `@lru_cache(maxsize=1)` | Builds the list one time | Replaces the notebook global variable |
+| `tokens = tokenize(text)` | Splits the text into tokens | Stop words are single tokens |
+| `token.lower() not in stop_set` | Compares the lowercase form | `The` and `the` are the same stop word |
+| `' '.join(filtered_tokens)` | Joins the kept tokens | To return one string |
+
+**Common mistakes:**
+- **CAUTION:** The updated list still contains short forms such as `didn`, `isn`, `wasn` (without `'t`). The pipeline removes apostrophes in step 4, so `didn't` becomes `didnt`. `didnt` is not in the list, so it stays. The negation survives, but as `didnt`, not as `not`.
+- **CAUTION:** The updated list still contains `no` and `nor`. These words are also negations. Remove them from the list if your task needs them.
+- **CAUTION:** For a language model or for translation, do not remove stop words. Those models need the full grammar.
+
+**Related concepts:** [7. Tokenization](#7-tokenization), [10. The Full Preprocessing Pipeline](#10-the-full-preprocessing-pipeline).
+
+---
+
+### 10. The Full Preprocessing Pipeline
+
+**Where in code:** `src/pipeline.py` → `PREPROCESSING_STEPS`, `preprocess_reviews()`, `save_processed()`, `run_demos()`
+**Called by:** `main.stage_preprocess()`, `main.stage_demo()` | **Calls:** the functions of sections 3, 4, 6 and 9
+
+**What it does (1–3 sentences):**
+`preprocess_reviews()` applies 4 steps to each review in a fixed order. It returns a new DataFrame. `save_processed()` writes the result to `data/processed/`.
+
+**Why it is necessary (1–3 sentences):**
+The order of the steps changes the result. A fixed list of steps makes the order clear and easy to change. A saved file lets the next tutorial start from clean data.
+
+**Theory:**
+The steps, in the notebook order:
+
+| # | Step | Input example | Output example |
+|---|---|---|---|
+| 1 | `denoise_text` | `This was not good.<br /><br />I didn't like it.` | `This was not good.I didn't like it.` |
+| 2 | `remove_special_characters` | (output of 1) | `This was not goodI didnt like it` |
+| 3 | `simple_stemmer` | (output of 2) | `thi wa not goodi didnt like it` |
+| 4 | `remove_stopwords` | (output of 3) | `thi wa not goodi didnt like` |
+
+This example shows three effects of the order:
+- `<br />` between sentences leaves no space, so `good.I` joins into one word `goodi`.
+- Step 3 changes `this` to `thi` and `was` to `wa`. These stems are not in the stop-word list, so step 4 keeps them. The notebook output shows the same effect: `thought thi wa wonder way`.
+- `didn't` becomes `didnt` in step 2, so the negation survives step 4.
+
+**Worked example (real notebook output):**
+Input review 2: `I thought this was a wonderful way to spend time on a too hot summer weekend...`
+Output review 2: `thought thi wa wonder way spend time hot summe...`
+
+**Code walkthrough:**
+| Line / statement | What it does | Why |
+|---|---|---|
+| `PREPROCESSING_STEPS = [...]` | Lists the steps in order | One place to read or change the order |
+| `result = df.copy()` | Copies the DataFrame | The input stays unchanged |
+| `result[text_column].apply(step_function)` | Runs one step on each review | Notebook: `df['review'] = df['review'].apply(...)` |
+| `time.perf_counter()` | Measures each step | Shows that stemming is the slowest step |
+| `df.to_csv(path, index=False)` | Saves the result | For later tutorials |
+
+**Common mistakes:**
+- **CAUTION:** To change the order changes the output. Example: stop-word removal before stemming removes `this` and `was` correctly.
+- **NOTE:** An experiment: in `PREPROCESSING_STEPS`, move `remove_stopwords` above `simple_stemmer`. Run `python main.py --step preprocess`. Compare the first rows.
+
+**Related concepts:** all sections 3 to 9.
+
+---
+
+## Concept-to-Code Index
+
+| Concept | File | Function | Section |
+|---|---|---|---|
+| NLTK data download | `utils/setup_resources.py` | `ensure_nltk_resources()` | [0](#0-supporting-code) |
+| Logging | `utils/logger.py` | `get_logger()` | [0](#0-supporting-code) |
+| Dataset loading | `src/data_loader.py` | `load_dataset()` | [1](#1-loading-the-dataset) |
+| Placeholder check | `src/data_loader.py` | `is_placeholder_data()` | [1](#1-loading-the-dataset) |
+| Summary statistics | `src/eda.py` | `describe_dataset()` | [2](#2-exploratory-data-analysis) |
+| Class balance | `src/eda.py` | `sentiment_counts()`, `plot_sentiment_distribution()` | [2](#2-exploratory-data-analysis) |
+| HTML removal | `src/text_cleaning.py` | `strip_html()` | [3](#3-noise-removal) |
+| Bracket removal | `src/text_cleaning.py` | `remove_between_square_brackets()` | [3](#3-noise-removal) |
+| Noise removal | `src/text_cleaning.py` | `denoise_text()` | [3](#3-noise-removal) |
+| Special characters | `src/text_cleaning.py` | `remove_special_characters()` | [4](#4-special-character-removal) |
+| Lemmatization | `src/normalization.py` | `lemmatize_word()` | [5](#5-lemmatization) |
+| Stemming | `src/normalization.py` | `simple_stemmer()` | [6](#6-stemming) |
+| Tokenization | `src/tokenization.py` | `tokenize()` | [7](#7-tokenization) |
+| POS tagging | `src/tokenization.py` | `pos_tag_tokens()` | [8](#8-part-of-speech-tagging) |
+| Stop words | `src/stopword_removal.py` | `remove_stopwords()` | [9](#9-stop-word-removal) |
+| Negation handling | `src/stopword_removal.py` | `build_updated_stopword_list()` | [9](#9-stop-word-removal) |
+| Full pipeline | `src/pipeline.py` | `preprocess_reviews()` | [10](#10-the-full-preprocessing-pipeline) |
+
+---
+
+## Glossary
+
+| Term | Definition |
+|---|---|
+| Corpus | A large collection of text. NLTK gives many corpora, for example the stop-word lists. |
+| DataFrame | A `pandas` table with rows and named columns. |
+| EDA (Exploratory Data Analysis) | A first look at a dataset: size, values, and class counts. |
+| HTML tag | A markup code in angle brackets, for example `<br />`. It is not part of the visible text. |
+| Lemma | The dictionary form of a word. The lemma of "better" (adjective) is "good". |
+| Lemmatization | The process that changes a word to its lemma. It uses a dictionary (WordNet). |
+| Negation | A word that reverses the meaning, for example "not" or "didn't". |
+| NLTK | Natural Language Toolkit. A Python library for work with human language. |
+| Noise | Text that has no value for the task, for example HTML tags. |
+| POS tag | Part-of-speech tag. A label for the word class, for example `NN` (noun) or `VBG` (verb, -ing form). |
+| Regular expression | A pattern that matches a set of strings. Python uses the `re` module for it. |
+| Sentiment | The opinion in a text: positive or negative. |
+| Special character | A character that is not a letter, a digit or whitespace, for example `!` or `?`. |
+| Stem | The part of a word that stays after a rule removes the suffix. The stem of "likes" is "like". |
+| Stemming | The process that cuts word endings by fixed rules. It does not use a dictionary. |
+| Stop word | A very common word with little meaning, for example "the", "is", "he". |
+| Token | One unit of text after tokenization: a word, a number or a punctuation mark. |
+| Tokenization | The process that splits text into tokens. |
+| Virtual environment | A folder with its own Python and packages, separate from other projects. |
+| WordNet | A large English dictionary database that NLTK uses for lemmatization. |
+
+---
+
+## Further Reading
+
+| Source | Topic |
+|---|---|
+| [NLTK documentation](https://www.nltk.org/) | All NLTK functions in this project |
+| [NLTK data](https://www.nltk.org/data.html) | How to install NLTK resources |
+| [Beautiful Soup documentation](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) | HTML parsing |
+| [Regular Expressions in Python (Real Python)](https://realpython.com/regex-python/) | The link that the notebook cites |
+| [Sentiment Analysis for Financial News (Kaggle)](https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news) | The source of `all-data.csv` |
+| [Python `re` module](https://docs.python.org/3/library/re.html) | Regular expression syntax |
+| [pandas documentation](https://pandas.pydata.org/docs/) | `read_csv`, `apply`, `value_counts` |
+# ----- END FILE: knowledge.md -----
+
+################################################################################
+# FILE 9/23: config/__init__.py
+################################################################################
+# ----- BEGIN FILE: config/__init__.py -----
+"""Configuration package. Import values from ``config.settings``."""
+# ----- END FILE: config/__init__.py -----
+
+################################################################################
+# FILE 10/23: config/settings.py
+################################################################################
+# ----- BEGIN FILE: config/settings.py -----
+"""Central settings for the project: paths, constants, flags and env loading.
+
+Purpose:
+    Keep every path, file name, constant and feature flag in one place, so no
+    other module hard-codes a value.
+
+Main contents:
+    - Paths built from ``PROJECT_ROOT``.
+    - Dataset and column names.
+    - NLTK resource names and preprocessing constants.
+    - Flags read from the optional ``.env`` file.
+    - ``validate_settings()`` that checks the dataset file exists.
+
+Called by:
+    Every other module (``utils``, ``src``, ``main.py``, ``tests``).
+    This module imports nothing from the project (bottom of the import layers).
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# --- Paths ---
+PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
+DATA_DIR: Path = PROJECT_ROOT / "data"
+RAW_DIR: Path = DATA_DIR / "raw"
+PROCESSED_DIR: Path = DATA_DIR / "processed"
+OUTPUT_DIR: Path = PROJECT_ROOT / "outputs"
+FIGURES_DIR: Path = OUTPUT_DIR / "figures"
+
+# Load optional settings from `.env` (no secrets are needed in this project).
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    """Read a true/false value from the environment."""
+    value = os.getenv(name, "").strip().lower()
+    if value == "":
+        return default
+    return value in {"1", "true", "yes", "on"}
+
+
+def _env_int_or_none(name: str) -> int | None:
+    """Read a positive integer from the environment, or None if it is empty."""
+    value = os.getenv(name, "").strip()
+    if value == "":
+        return None
+    number = int(value)
+    return number if number > 0 else None
+
+
+# --- Dataset ---
+# Financial news sentiment dataset: 2 columns, NO header row,
+# column order = sentiment label, then text. Labels: positive/neutral/negative.
+DATASET_FILENAME: str = "all-data.csv"
+DATASET_PATH: Path = RAW_DIR / DATASET_FILENAME
+# The file is not valid UTF-8 (it has Latin-1 characters such as accents).
+DATASET_ENCODING: str = "latin-1"
+DATASET_HAS_HEADER: bool = False
+# A marker file next to the CSV. If it exists, the CSV is placeholder data.
+PLACEHOLDER_MARKER_PATH: Path = RAW_DIR / "all-data.PLACEHOLDER.md"
+PROCESSED_DATASET_PATH: Path = PROCESSED_DIR / "all-data_preprocessed.csv"
+SENTIMENT_PLOT_PATH: Path = FIGURES_DIR / "sentiment_distribution.png"
+
+# Original source cited by the notebook (raw text archive, not the CSV).
+DATASET_SOURCE_URL: str = "https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news"
+
+TEXT_COLUMN: str = "review"
+LABEL_COLUMN: str = "sentiment"
+
+# Column order in the raw CSV (used because the file has no header row).
+# Internal names stay "review"/"sentiment" so the rest of the pipeline is unchanged.
+CSV_COLUMN_ORDER: tuple[str, str] = (LABEL_COLUMN, TEXT_COLUMN)
+
+# --- Display ---
+PREVIEW_ROWS: int = 10           # notebook: df.head(10)
+SAMPLE_REVIEW_INDEX: int = 5     # notebook: df["review"][5]
+
+# --- NLTK resources (notebook: nltk.download(...) calls) ---
+NLTK_RESOURCES: tuple[str, ...] = (
+    "stopwords",                       # stop-word lists
+    "punkt",                           # Punkt tokenizer model (older NLTK)
+    "punkt_tab",                       # Punkt tokenizer tables (NLTK >= 3.8.2)
+    "wordnet",                         # WordNet for the lemmatizer
+    "averaged_perceptron_tagger",      # POS tagger (older NLTK)
+    "averaged_perceptron_tagger_eng",  # POS tagger (NLTK >= 3.9)
+)
+NLTK_DATA_DIR: str | None = os.getenv("NLTK_DATA") or None
+
+# --- Preprocessing constants ---
+# Keep letters, digits and whitespace; remove everything else.
+SPECIAL_CHAR_PATTERN: str = r"[^a-zA-Z0-9\s]"
+STOPWORD_LANGUAGE: str = "english"
+# Words to KEEP even though NLTK lists them as stop words (negations).
+NEGATION_WORD: str = "not"
+NEGATION_SUFFIX: str = "n't"
+
+# --- Demo inputs (the exact examples from the notebook) ---
+DEMO_HTML: str = """<body>
+<h1>This is a test heading.</h1>
+<p>Starting a paragraph here...</p>
+</body>"""
+DEMO_BRACKETS: str = "I bought [apple, banana, orange] yesterday."
+DEMO_SPECIAL_CHARS: str = "Hi There! How are you?"
+DEMO_LEMMA_WORD: str = "better"
+DEMO_LEMMA_POS: str = "a"
+DEMO_STEM_TEXT: str = "He likes lemons bananas and oranges. He goes to market."
+DEMO_TOKENIZE_TEXT: str = "I enjoy playing football in the rain."
+DEMO_STOPWORD_TEXT: str = "The movie was not that great"
+
+# --- Flags ---
+SHOW_PLOTS: bool = _env_bool("SHOW_PLOTS", default=False)
+SAMPLE_SIZE: int | None = _env_int_or_none("SAMPLE_SIZE")
+LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO").upper()
+
+
+def validate_settings(dataset_path: Path = DATASET_PATH) -> None:
+    """Check that the settings needed to run the pipeline are valid.
+
+    Args:
+        dataset_path: Path to the dataset CSV file.
+
+    Raises:
+        FileNotFoundError: If the dataset file does not exist. The message
+            tells the user what to do.
+
+    Why: see knowledge.md, section "1. Loading the Dataset".
+    """
+    if not dataset_path.exists():
+        raise FileNotFoundError(
+            f"Dataset not found: {dataset_path}\n"
+            f"Action: put '{DATASET_FILENAME}' in '{RAW_DIR}'. "
+            "See data/README.md for the download source."
+        )
+# ----- END FILE: config/settings.py -----
+
+################################################################################
+# FILE 11/23: utils/__init__.py
+################################################################################
+# ----- BEGIN FILE: utils/__init__.py -----
+"""Reusable helpers: logging and NLTK resource setup."""
+# ----- END FILE: utils/__init__.py -----
+
+################################################################################
+# FILE 12/23: utils/logger.py
+################################################################################
+# ----- BEGIN FILE: utils/logger.py -----
+"""Shared logging setup.
+
+Purpose:
+    Give every module the same log format through one function, so the code
+    uses ``logger.info(...)`` instead of bare ``print(...)``.
+
+Main functions:
+    - ``get_logger(name)``
+
+Called by:
+    ``utils.setup_resources``, every ``src`` module, and ``main.py``.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from config.settings import LOG_LEVEL
+
+_LOG_FORMAT = "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"
+_DATE_FORMAT = "%H:%M:%S"
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Return a logger with the project format and level.
+
+    Args:
+        name: Logger name. Use ``__name__`` of the calling module.
+
+    Returns:
+        A configured ``logging.Logger``.
+
+    Why: see knowledge.md, section "0. Supporting Code".
+    """
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(_LOG_FORMAT, _DATE_FORMAT))
+        logger.addHandler(handler)
+        logger.propagate = False
+    logger.setLevel(LOG_LEVEL)
+    return logger
+# ----- END FILE: utils/logger.py -----
+
+################################################################################
+# FILE 13/23: utils/setup_resources.py
+################################################################################
+# ----- BEGIN FILE: utils/setup_resources.py -----
+"""Download the NLTK data files that the project needs.
+
+Purpose:
+    Replace the notebook's ``nltk.download(...)`` lines. NLTK code (stop words,
+    tokenizer, lemmatizer, POS tagger) needs extra data files that ``pip`` does
+    not install.
+
+Main functions:
+    - ``ensure_nltk_resources()``: download each missing resource once.
+
+Run alone:
+    python -m utils.setup_resources
+
+Called by:
+    ``main.py`` (at start-up) and ``tests/test_smoke.py``.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import nltk
+
+from config.settings import NLTK_DATA_DIR, NLTK_RESOURCES
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+# Where NLTK keeps each resource inside its data folder.
+_RESOURCE_LOCATIONS: dict[str, str] = {
+    "stopwords": "corpora/stopwords",
+    "punkt": "tokenizers/punkt",
+    "punkt_tab": "tokenizers/punkt_tab",
+    "wordnet": "corpora/wordnet",
+    "averaged_perceptron_tagger": "taggers/averaged_perceptron_tagger",
+    "averaged_perceptron_tagger_eng": "taggers/averaged_perceptron_tagger_eng",
+}
+
+
+def _is_installed(resource: str) -> bool:
+    """Return True if NLTK can find the resource on disk."""
+    location = _RESOURCE_LOCATIONS.get(resource, resource)
+    for candidate in (location, f"{location}.zip"):
+        try:
+            nltk.data.find(candidate)
+            return True
+        except LookupError:
+            continue
+    return False
+
+
+def ensure_nltk_resources(
+    resources: tuple[str, ...] = NLTK_RESOURCES,
+    download_dir: str | None = NLTK_DATA_DIR,
+) -> list[str]:
+    """Download every NLTK resource that is not installed yet.
+
+    Args:
+        resources: Names of the NLTK resources to check.
+        download_dir: Optional folder for NLTK data. ``None`` uses the
+            NLTK default folder.
+
+    Returns:
+        The names of resources that are still missing after the download.
+        An empty list means that all resources are ready.
+
+    Why: see knowledge.md, section "0. Supporting Code".
+    """
+    if download_dir:
+        Path(download_dir).mkdir(parents=True, exist_ok=True)
+        if download_dir not in nltk.data.path:
+            nltk.data.path.insert(0, download_dir)
+
+    missing: list[str] = []
+    for resource in resources:
+        if _is_installed(resource):
+            logger.debug("NLTK resource '%s' is already installed.", resource)
+            continue
+        logger.info("Downloading NLTK resource '%s' ...", resource)
+        ok = nltk.download(resource, download_dir=download_dir, quiet=True)
+        if not ok or not _is_installed(resource):
+            missing.append(resource)
+
+    if missing:
+        logger.error(
+            "These NLTK resources did not download: %s. "
+            "Check your internet connection, then run: python -m utils.setup_resources",
+            ", ".join(missing),
+        )
+    else:
+        logger.info("All NLTK resources are ready.")
+    return missing
+
+
+if __name__ == "__main__":
+    still_missing = ensure_nltk_resources()
+    raise SystemExit(1 if still_missing else 0)
+# ----- END FILE: utils/setup_resources.py -----
+
+################################################################################
+# FILE 14/23: src/__init__.py
+################################################################################
+# ----- BEGIN FILE: src/__init__.py -----
+"""Business logic: load data, explore it, and preprocess review text with NLTK."""
+# ----- END FILE: src/__init__.py -----
+
+################################################################################
+# FILE 15/23: src/data_loader.py
+################################################################################
+# ----- BEGIN FILE: src/data_loader.py -----
+"""Load the financial news sentiment dataset.
+
+Purpose:
+    Read ``all-data.csv`` into a pandas DataFrame and warn the user when
+    the file is placeholder data.
+
+Main functions:
+    - ``is_placeholder_data()``
+    - ``load_dataset()``
+    - ``get_review()``
+
+Notebook cells covered:
+    "Load the dataset" (``pd.read_csv``, ``df.shape``, ``df.head(10)``) and
+    "Let us view one of the reviews" (``df["review"][5]``).
+
+Called by:
+    ``main.py`` and ``src.pipeline``.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pandas as pd
+
+from config.settings import (
+    CSV_COLUMN_ORDER,
+    DATASET_ENCODING,
+    DATASET_HAS_HEADER,
+    DATASET_PATH,
+    LABEL_COLUMN,
+    PLACEHOLDER_MARKER_PATH,
+    TEXT_COLUMN,
+    validate_settings,
+)
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def is_placeholder_data(marker_path: Path = PLACEHOLDER_MARKER_PATH) -> bool:
+    """Return True if the placeholder marker file exists next to the dataset.
+
+    Args:
+        marker_path: Path of the ``.PLACEHOLDER.md`` marker file.
+
+    Returns:
+        True when the dataset in ``data/raw`` is placeholder data.
+
+    Why: see knowledge.md, section "1. Loading the Dataset".
+    """
+    return marker_path.exists()
+
+
+def load_dataset(
+    path: Path = DATASET_PATH,
+    sample_size: int | None = None,
+    marker_path: Path = PLACEHOLDER_MARKER_PATH,
+) -> pd.DataFrame:
+    """Read the dataset CSV file into a DataFrame.
+
+    Args:
+        path: Path to the CSV file with ``review`` and ``sentiment`` columns.
+        sample_size: If set, keep only the first ``sample_size`` rows.
+            ``None`` keeps all rows (the notebook behavior).
+        marker_path: Path of the placeholder marker file.
+
+    Returns:
+        A DataFrame with the columns ``review`` and ``sentiment``.
+
+    Raises:
+        FileNotFoundError: If the CSV file does not exist.
+        ValueError: If a required column is missing.
+
+    Why: see knowledge.md, section "1. Loading the Dataset".
+    """
+    validate_settings(path)
+    if DATASET_HAS_HEADER:
+        df = pd.read_csv(path, encoding=DATASET_ENCODING)
+    else:
+        # No header row: name the columns ourselves (label first, then text).
+        df = pd.read_csv(
+            path, header=None, names=list(CSV_COLUMN_ORDER), encoding=DATASET_ENCODING
+        )
+    # Keep the usual "review, sentiment" column order for previews/output.
+    df = df[[TEXT_COLUMN, LABEL_COLUMN]]
+
+    missing = {TEXT_COLUMN, LABEL_COLUMN} - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"{path.name} must have the columns '{TEXT_COLUMN}' and "
+            f"'{LABEL_COLUMN}'. Missing: {sorted(missing)}"
+        )
+
+    if is_placeholder_data(marker_path):
+        logger.warning(
+            "PLACEHOLDER DATA: '%s' contains %d made-up reviews. "
+            "Replace it with the real dataset file, then delete '%s'. "
+            "See data/README.md.",
+            path.name,
+            len(df),
+            marker_path.name,
+        )
+
+    if sample_size is not None:
+        df = df.head(sample_size).reset_index(drop=True)
+        logger.info("Using the first %d rows (sample_size is set).", len(df))
+
+    logger.info("Loaded dataset with shape %s.", df.shape)  # notebook: print(df.shape)
+    return df
+
+
+def get_review(df: pd.DataFrame, index: int) -> str:
+    """Return the full text of one review.
+
+    Args:
+        df: The reviews DataFrame.
+        index: Row index of the review.
+
+    Returns:
+        The review text. Returns an empty string if the index does not exist.
+
+    Why: see knowledge.md, section "1. Loading the Dataset".
+    """
+    if index not in df.index:
+        logger.warning("Row %d does not exist (dataset has %d rows).", index, len(df))
+        return ""
+    return str(df[TEXT_COLUMN][index])
+
+
+if __name__ == "__main__":
+    data = load_dataset()
+    print(data.head(10))
+# ----- END FILE: src/data_loader.py -----
+
+################################################################################
+# FILE 16/23: src/eda.py
+################################################################################
+# ----- BEGIN FILE: src/eda.py -----
+"""Exploratory Data Analysis (EDA) of the reviews.
+
+Purpose:
+    Summarize the dataset and check the class balance of the ``sentiment``
+    column, with a bar chart.
+
+Main functions:
+    - ``describe_dataset()``
+    - ``sentiment_counts()``
+    - ``plot_sentiment_distribution()``
+
+Notebook cells covered:
+    "Exploratory Data Analysis" (``df.describe()``,
+    ``df['sentiment'].value_counts()``, ``sns.barplot(...)``).
+
+Called by:
+    ``main.py``.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import matplotlib
+import pandas as pd
+
+from config.settings import LABEL_COLUMN, SENTIMENT_PLOT_PATH, SHOW_PLOTS
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def describe_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """Return the summary statistics of the DataFrame.
+
+    Args:
+        df: The reviews DataFrame.
+
+    Returns:
+        The output of ``df.describe()``: count, unique, top, freq per column.
+
+    Why: see knowledge.md, section "2. Exploratory Data Analysis".
+    """
+    return df.describe()
+
+
+def sentiment_counts(df: pd.DataFrame) -> pd.Series:
+    """Count the reviews per sentiment class.
+
+    Args:
+        df: The reviews DataFrame.
+
+    Returns:
+        A Series: index = sentiment label, value = number of reviews.
+
+    Why: see knowledge.md, section "2. Exploratory Data Analysis".
+    """
+    return df[LABEL_COLUMN].value_counts()
+
+
+def plot_sentiment_distribution(
+    df: pd.DataFrame,
+    save_path: Path = SENTIMENT_PLOT_PATH,
+    show: bool = SHOW_PLOTS,
+) -> Path:
+    """Draw a bar chart of the review count per sentiment class and save it.
+
+    Args:
+        df: The reviews DataFrame.
+        save_path: Where to save the PNG file.
+        show: If True, also open the chart in a window.
+
+    Returns:
+        The path of the saved PNG file.
+
+    Why: see knowledge.md, section "2. Exploratory Data Analysis".
+    """
+    if not show:
+        matplotlib.use("Agg")  # no window needed; works on servers and in tests
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    counts = sentiment_counts(df)
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    # Same call as the notebook, drawn on an explicit Axes.
+    sns.barplot(x=counts.index, y=counts.values, hue=counts.index, ax=ax)
+    ax.set_title("Sentiment distribution")
+    ax.set_xlabel(LABEL_COLUMN)
+    ax.set_ylabel("count")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=120)
+    logger.info("Saved sentiment bar chart to %s", save_path)
+
+    if show:
+        plt.show()
+    plt.close(fig)
+    return save_path
+
+
+if __name__ == "__main__":
+    from src.data_loader import load_dataset
+
+    data = load_dataset()
+    print(describe_dataset(data))
+    print(sentiment_counts(data))
+    plot_sentiment_distribution(data)
+# ----- END FILE: src/eda.py -----
+
+################################################################################
+# FILE 17/23: src/normalization.py
+################################################################################
+# ----- BEGIN FILE: src/normalization.py -----
+"""Word normalization: lemmatization and stemming.
+
+Purpose:
+    Reduce words to a base form so that different forms of one word
+    ("likes", "like") count as the same word.
+
+Main functions:
+    - ``lemmatize_word()``: WordNet lemmatizer (demo only, as in the notebook).
+    - ``simple_stemmer()``: Porter stemmer on every word of a text.
+
+Notebook cells covered:
+    "Lemmatization" and "Text Stemming".
+
+Called by:
+    ``src.pipeline``.
+"""
+
+from __future__ import annotations
+
+from nltk.stem import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
+
+# Create the NLTK objects one time. The notebook created a new stemmer for
+# every review; one shared object gives the same result and is faster.
+_lemmatizer = WordNetLemmatizer()
+_stemmer = PorterStemmer()
+
+
+def lemmatize_word(word: str, pos: str = "n") -> str:
+    """Return the lemma (dictionary form) of one word.
+
+    Args:
+        word: The word to lemmatize.
+        pos: The part-of-speech tag. Valid options are ``"n"`` (noun),
+            ``"v"`` (verb), ``"a"`` (adjective), ``"r"`` (adverb) and
+            ``"s"`` (satellite adjective).
+
+    Returns:
+        The lemma. Example: ``lemmatize_word("better", pos="a")`` -> ``"good"``.
+
+    Why: see knowledge.md, section "5. Lemmatization".
+    """
+    return _lemmatizer.lemmatize(word, pos=pos)
+
+
+def simple_stemmer(text: str) -> str:
+    """Stem every whitespace-separated word with the Porter stemmer.
+
+    Args:
+        text: Input text.
+
+    Returns:
+        The stemmed text, in lowercase, with words joined by single spaces.
+
+    Why: see knowledge.md, section "6. Stemming".
+    """
+    stems: list[str] = [str(_stemmer.stem(word)) for word in text.split()]
+    return " ".join(stems)
+
+
+if __name__ == "__main__":
+    from config.settings import DEMO_LEMMA_POS, DEMO_LEMMA_WORD, DEMO_STEM_TEXT
+
+    print("better :", lemmatize_word(DEMO_LEMMA_WORD, pos=DEMO_LEMMA_POS))
+    print(simple_stemmer(DEMO_STEM_TEXT))
+# ----- END FILE: src/normalization.py -----
+
+################################################################################
+# FILE 18/23: src/pipeline.py
+################################################################################
+# ----- BEGIN FILE: src/pipeline.py -----
+"""Preprocessing pipeline and the notebook's small demos.
+
+Purpose:
+    1. Run each NLTK technique on the small example sentences from the
+       notebook (``run_demos``).
+    2. Apply the four cleaning steps to every review, in the notebook order
+       (``preprocess_reviews``):
+       denoise -> remove special characters -> stem -> remove stop words.
+    3. Save the cleaned reviews to ``data/processed``.
+
+Main functions:
+    - ``run_demos()``
+    - ``preprocess_reviews()``
+    - ``save_processed()``
+
+Called by:
+    ``main.py``.
+"""
+
+from __future__ import annotations
+
+import time
+from collections.abc import Callable
+from pathlib import Path
+
+import pandas as pd
+
+from config import settings
+from src.normalization import lemmatize_word, simple_stemmer
+from src.stopword_removal import (
+    get_stopword_list,
+    get_updated_stopword_list,
+    remove_stopwords,
+)
+from src.text_cleaning import (
+    denoise_text,
+    remove_between_square_brackets,
+    remove_special_characters,
+    strip_html,
+)
+from src.tokenization import pos_tag_tokens, tokenize
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+# The order of the steps is the order of the notebook. Do not change it
+# without reading knowledge.md, section "10. The Full Preprocessing Pipeline".
+PREPROCESSING_STEPS: list[tuple[str, Callable[[str], str]]] = [
+    ("denoise_text", denoise_text),
+    ("remove_special_characters", remove_special_characters),
+    ("simple_stemmer", simple_stemmer),
+    ("remove_stopwords", remove_stopwords),
+]
+
+
+def run_demos() -> dict[str, object]:
+    """Run every technique on the notebook's example inputs.
+
+    Returns:
+        A dict: demo name -> output. The values match the notebook outputs.
+
+    Why: see knowledge.md, sections 3 to 9 (one demo per technique).
+    """
+    tokens = tokenize(settings.DEMO_TOKENIZE_TEXT)
+    stopword_list = get_stopword_list()
+    return {
+        "strip_html": strip_html(settings.DEMO_HTML),
+        "remove_between_square_brackets": remove_between_square_brackets(
+            settings.DEMO_BRACKETS
+        ),
+        "remove_special_characters": remove_special_characters(
+            settings.DEMO_SPECIAL_CHARS
+        ),
+        "lemmatize_word": lemmatize_word(
+            settings.DEMO_LEMMA_WORD, pos=settings.DEMO_LEMMA_POS
+        ),
+        "simple_stemmer": simple_stemmer(settings.DEMO_STEM_TEXT),
+        "tokenize": tokens,
+        "pos_tag_tokens": pos_tag_tokens(tokens),
+        "stopword_list": stopword_list,
+        "updated_stopword_list": list(get_updated_stopword_list()),
+        "remove_stopwords": remove_stopwords(settings.DEMO_STOPWORD_TEXT),
+    }
+
+
+def preprocess_reviews(
+    df: pd.DataFrame,
+    text_column: str = settings.TEXT_COLUMN,
+) -> pd.DataFrame:
+    """Apply all cleaning steps to the review column, in the notebook order.
+
+    Args:
+        df: The reviews DataFrame. The function does not change it.
+        text_column: Name of the column with the review text.
+
+    Returns:
+        A new DataFrame with the cleaned text in ``text_column``.
+
+    Why: see knowledge.md, section "10. The Full Preprocessing Pipeline".
+    """
+    result = df.copy()
+    for step_name, step_function in PREPROCESSING_STEPS:
+        start = time.perf_counter()
+        # notebook: df['review'] = df['review'].apply(<function>)
+        result[text_column] = result[text_column].apply(step_function)
+        elapsed = time.perf_counter() - start
+        logger.info("Step '%s' finished in %.2f s.", step_name, elapsed)
+    return result
+
+
+def save_processed(
+    df: pd.DataFrame,
+    path: Path = settings.PROCESSED_DATASET_PATH,
+) -> Path:
+    """Save the preprocessed DataFrame as a CSV file.
+
+    Args:
+        df: The preprocessed DataFrame.
+        path: Output CSV path.
+
+    Returns:
+        The path of the saved file.
+
+    Why: see knowledge.md, section "10. The Full Preprocessing Pipeline".
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path, index=False)
+    logger.info("Saved preprocessed reviews to %s", path)
+    return path
+
+
+if __name__ == "__main__":
+    for name, value in run_demos().items():
+        print(f"{name}: {value}")
+# ----- END FILE: src/pipeline.py -----
+
+################################################################################
+# FILE 19/23: src/stopword_removal.py
+################################################################################
+# ----- BEGIN FILE: src/stopword_removal.py -----
+"""Stop-word removal that keeps negation words.
+
+Purpose:
+    Remove common English words that carry little meaning ("the", "is", ...),
+    but KEEP "not" and every word that ends in "n't". Negations change the
+    sentiment of a review, so they must stay.
+
+Main functions:
+    - ``get_stopword_list()``: the full NLTK English list.
+    - ``build_updated_stopword_list()``: the list without negations.
+    - ``get_updated_stopword_list()``: cached version of the line above.
+    - ``remove_stopwords()``
+
+Notebook cells covered:
+    "Removing stop words" (``stopword_list``, ``updated_stopword_list``,
+    ``remove_stopwords``).
+
+Called by:
+    ``src.pipeline``.
+"""
+
+from __future__ import annotations
+
+from functools import lru_cache
+
+from nltk.corpus import stopwords
+
+from config.settings import NEGATION_SUFFIX, NEGATION_WORD, STOPWORD_LANGUAGE
+from src.tokenization import tokenize
+
+
+def get_stopword_list(language: str = STOPWORD_LANGUAGE) -> list[str]:
+    """Return the NLTK stop-word list for a language.
+
+    Args:
+        language: NLTK language name, for example ``"english"``.
+
+    Returns:
+        The list of stop words.
+
+    Why: see knowledge.md, section "9. Stop-Word Removal".
+    """
+    return stopwords.words(language)
+
+
+def build_updated_stopword_list(stopword_list: list[str]) -> list[str]:
+    """Remove "not" and every word that ends in "n't" from a stop-word list.
+
+    Args:
+        stopword_list: The original stop-word list.
+
+    Returns:
+        A new list without the negation words.
+
+    Why: see knowledge.md, section "9. Stop-Word Removal".
+    """
+    updated_stopword_list: list[str] = []
+    for word in stopword_list:
+        if word == NEGATION_WORD or word.endswith(NEGATION_SUFFIX):
+            pass
+        else:
+            updated_stopword_list.append(word)
+    return updated_stopword_list
+
+
+@lru_cache(maxsize=1)
+def get_updated_stopword_list() -> tuple[str, ...]:
+    """Return the English stop-word list without negations (built one time).
+
+    Returns:
+        A tuple of stop words. The tuple replaces the notebook's global
+        variable ``updated_stopword_list``.
+
+    Why: see knowledge.md, section "9. Stop-Word Removal".
+    """
+    return tuple(build_updated_stopword_list(get_stopword_list()))
+
+
+def remove_stopwords(
+    text: str,
+    is_lower_case: bool = False,
+    stopword_list: list[str] | tuple[str, ...] | None = None,
+) -> str:
+    """Remove stop words from a text and keep negation words.
+
+    Args:
+        text: Input text.
+        is_lower_case: Set True if the text is already lowercase. Then the
+            function compares tokens as they are. If False, the function
+            compares the lowercase form of each token.
+        stopword_list: The stop words to remove. ``None`` uses
+            ``get_updated_stopword_list()`` (the notebook behavior).
+
+    Returns:
+        The text without stop words, with tokens joined by single spaces.
+        Example: ``"The movie was not that great"`` -> ``"movie not great"``.
+
+    Why: see knowledge.md, section "9. Stop-Word Removal".
+    """
+    stop_set = set(stopword_list if stopword_list is not None else get_updated_stopword_list())
+
+    # splitting strings into tokens (list of words)
+    tokens = tokenize(text)
+    tokens = [token.strip() for token in tokens]
+    if is_lower_case:
+        # filtering out the stop words
+        filtered_tokens = [token for token in tokens if token not in stop_set]
+    else:
+        filtered_tokens = [token for token in tokens if token.lower() not in stop_set]
+    return " ".join(filtered_tokens)
+
+
+if __name__ == "__main__":
+    from config.settings import DEMO_STOPWORD_TEXT
+
+    print(get_stopword_list())
+    print(list(get_updated_stopword_list()))
+    print(remove_stopwords(DEMO_STOPWORD_TEXT))
+# ----- END FILE: src/stopword_removal.py -----
+
+################################################################################
+# FILE 20/23: src/text_cleaning.py
+################################################################################
+# ----- BEGIN FILE: src/text_cleaning.py -----
+"""Noise removal and special-character removal.
+
+Purpose:
+    Clean raw review text: remove HTML markup, remove square brackets, and
+    remove every character that is not a letter, a digit or whitespace.
+
+Main functions:
+    - ``strip_html()``
+    - ``remove_between_square_brackets()``
+    - ``denoise_text()``
+    - ``remove_special_characters()``
+
+Notebook cells covered:
+    "Removing noisy text" and "Removing special characters".
+
+Called by:
+    ``src.pipeline``.
+"""
+
+from __future__ import annotations
+
+import re
+import warnings
+
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+
+from config.settings import SPECIAL_CHAR_PATTERN
+
+# Short reviews that look like a file name or URL make BeautifulSoup print a
+# warning. The text is still parsed correctly, so hide only this warning.
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+
+_SPECIAL_CHAR_REGEX = re.compile(SPECIAL_CHAR_PATTERN)
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and keep only the visible text.
+
+    Args:
+        text: Raw text that can contain HTML such as ``<br />``.
+
+    Returns:
+        The text without HTML tags.
+
+    Why: see knowledge.md, section "3. Noise Removal".
+    """
+    # BeautifulSoup is a useful library for extracting data from HTML and XML documents
+    soup = BeautifulSoup(text, "html.parser")
+    return soup.get_text()
+
+
+def remove_between_square_brackets(text: str) -> str:
+    """Remove the square-bracket characters but keep the text inside them.
+
+    Args:
+        text: Input text.
+
+    Returns:
+        The text without ``[`` and ``]``.
+
+    Why: see knowledge.md, section "3. Noise Removal".
+    """
+    text = text.replace("[", "")
+    text = text.replace("]", "")
+    return text
+    # Alternative from the notebook (removes the brackets AND the text inside):
+    # return re.sub(r'\[[^]]*\]', '', text)
+
+
+def denoise_text(text: str) -> str:
+    """Apply all noise-removal steps: HTML, then square brackets.
+
+    Args:
+        text: Raw review text.
+
+    Returns:
+        The review text without HTML tags and square brackets.
+
+    Why: see knowledge.md, section "3. Noise Removal".
+    """
+    text = strip_html(text)
+    text = remove_between_square_brackets(text)
+    return text
+
+
+def remove_special_characters(text: str) -> str:
+    """Remove every character that is not a letter, a digit or whitespace.
+
+    Args:
+        text: Input text.
+
+    Returns:
+        The text with only ``a-z``, ``A-Z``, ``0-9`` and whitespace.
+
+    Why: see knowledge.md, section "4. Special Character Removal".
+    """
+    return _SPECIAL_CHAR_REGEX.sub("", text)
+
+
+if __name__ == "__main__":
+    from config.settings import DEMO_BRACKETS, DEMO_HTML, DEMO_SPECIAL_CHARS
+
+    print(strip_html(DEMO_HTML))
+    print(remove_between_square_brackets(DEMO_BRACKETS))
+    print(remove_special_characters(DEMO_SPECIAL_CHARS))
+# ----- END FILE: src/text_cleaning.py -----
+
+################################################################################
+# FILE 21/23: src/tokenization.py
+################################################################################
+# ----- BEGIN FILE: src/tokenization.py -----
+"""Tokenization and part-of-speech (POS) tagging.
+
+Purpose:
+    Split text into word tokens, and label each token with its word class.
+
+Main functions:
+    - ``tokenize()``
+    - ``pos_tag_tokens()``
+
+Notebook cells covered:
+    "Tokenization" and "Part-of-speech tagging" (demo only in the notebook).
+
+Called by:
+    ``src.pipeline`` and ``src.stopword_removal``.
+"""
+
+from __future__ import annotations
+
+import nltk
+from nltk.tokenize import word_tokenize
+
+
+def tokenize(text: str) -> list[str]:
+    """Split text into word and punctuation tokens with NLTK.
+
+    Args:
+        text: Input text.
+
+    Returns:
+        A list of tokens. Example:
+        ``"I enjoy playing football in the rain."`` ->
+        ``['I', 'enjoy', 'playing', 'football', 'in', 'the', 'rain', '.']``.
+
+    Why: see knowledge.md, section "7. Tokenization".
+    """
+    return word_tokenize(text)
+
+
+def pos_tag_tokens(tokens: list[str]) -> list[tuple[str, str]]:
+    """Tag each token with its Penn Treebank part-of-speech tag.
+
+    Args:
+        tokens: A list of tokens from ``tokenize()``.
+
+    Returns:
+        A list of ``(token, tag)`` pairs, for example ``('rain', 'NN')``.
+
+    Why: see knowledge.md, section "8. Part-of-Speech Tagging".
+    """
+    return nltk.pos_tag(tokens)
+
+
+if __name__ == "__main__":
+    from config.settings import DEMO_TOKENIZE_TEXT
+
+    demo_tokens = tokenize(DEMO_TOKENIZE_TEXT)
+    print(demo_tokens)
+    print(pos_tag_tokens(demo_tokens))
+# ----- END FILE: src/tokenization.py -----
+
+################################################################################
+# FILE 22/23: tests/test_smoke.py
+################################################################################
+# ----- BEGIN FILE: tests/test_smoke.py -----
+"""Smoke tests: every module imports, every function gives the notebook output,
+and the full pipeline runs on the placeholder data.
+
+Run:
+    pytest
+"""
+
+from __future__ import annotations
+
+import importlib
+
+import pytest
+
+from utils.setup_resources import ensure_nltk_resources
+
+MODULES = [
+    "config.settings",
+    "utils.logger",
+    "utils.setup_resources",
+    "src.data_loader",
+    "src.eda",
+    "src.text_cleaning",
+    "src.normalization",
+    "src.tokenization",
+    "src.stopword_removal",
+    "src.pipeline",
+    "main",
+]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def nltk_ready() -> None:
+    """Download NLTK resources one time. Skip all tests if that fails."""
+    missing = ensure_nltk_resources()
+    if missing:
+        pytest.skip(f"NLTK resources not available (offline?): {missing}")
+
+
+@pytest.mark.parametrize("module_name", MODULES)
+def test_module_imports(module_name: str) -> None:
+    assert importlib.import_module(module_name) is not None
+
+
+# --- Notebook outputs (each expected value is copied from the notebook) ---
+
+def test_strip_html() -> None:
+    from config.settings import DEMO_HTML
+    from src.text_cleaning import strip_html
+
+    lines = [line for line in strip_html(DEMO_HTML).splitlines() if line.strip()]
+    assert lines == ["This is a test heading.", "Starting a paragraph here..."]
+
+
+def test_remove_between_square_brackets() -> None:
+    from src.text_cleaning import remove_between_square_brackets
+
+    assert (
+        remove_between_square_brackets("I bought [apple, banana, orange] yesterday.")
+        == "I bought apple, banana, orange yesterday."
+    )
+
+
+def test_remove_special_characters() -> None:
+    from src.text_cleaning import remove_special_characters
+
+    assert remove_special_characters("Hi There! How are you?") == "Hi There How are you"
+
+
+def test_lemmatize_word() -> None:
+    from src.normalization import lemmatize_word
+
+    assert lemmatize_word("better", pos="a") == "good"
+
+
+def test_simple_stemmer() -> None:
+    from src.normalization import simple_stemmer
+
+    assert (
+        simple_stemmer("He likes lemons bananas and oranges. He goes to market.")
+        == "he like lemon banana and oranges. he goe to market."
+    )
+
+
+def test_tokenize_and_pos_tag() -> None:
+    from src.tokenization import pos_tag_tokens, tokenize
+
+    tokens = tokenize("I enjoy playing football in the rain.")
+    assert tokens == ["I", "enjoy", "playing", "football", "in", "the", "rain", "."]
+    tags = pos_tag_tokens(tokens)
+    assert [token for token, _ in tags] == tokens
+    assert dict(tags)["rain"] == "NN"
+
+
+def test_updated_stopword_list_keeps_negations() -> None:
+    from src.stopword_removal import get_stopword_list, get_updated_stopword_list
+
+    full = get_stopword_list()
+    updated = get_updated_stopword_list()
+    assert "not" in full and "not" not in updated
+    assert all(not word.endswith("n't") for word in updated)
+    assert "the" in updated
+
+
+def test_remove_stopwords() -> None:
+    from src.stopword_removal import remove_stopwords
+
+    assert remove_stopwords("The movie was not that great") == "movie not great"
+
+
+# --- End-to-end on the data in data/raw (placeholder or real) ---
+
+def test_pipeline_on_dataset(tmp_path) -> None:
+    from config.settings import TEXT_COLUMN
+    from src.data_loader import load_dataset
+    from src.pipeline import preprocess_reviews, save_processed
+
+    df = load_dataset(sample_size=20)
+    cleaned = preprocess_reviews(df)
+    assert cleaned.shape == df.shape
+    joined = " ".join(cleaned[TEXT_COLUMN])
+    assert "<" not in joined and "[" not in joined and "!" not in joined
+    out = save_processed(cleaned, tmp_path / "out.csv")
+    assert out.exists()
+
+
+def test_eda_plot(tmp_path) -> None:
+    from src.data_loader import load_dataset
+    from src.eda import plot_sentiment_distribution
+
+    df = load_dataset(sample_size=20)
+    path = plot_sentiment_distribution(df, save_path=tmp_path / "plot.png", show=False)
+    assert path.exists() and path.stat().st_size > 0
+
+
+def test_main_runs() -> None:
+    import main
+
+    assert main.main(["--step", "all", "--sample", "20"]) == 0
+# ----- END FILE: tests/test_smoke.py -----
+
+################################################################################
+# FILE 23/23: data/README.md
+################################################################################
+# ----- BEGIN FILE: data/README.md -----
+# Data Manifest
+
+This file lists each data file that the project reads or writes.
+
+## Input and output files
+
+| File | Used by (module.function) | Source | Status | Action required |
+|---|---|---|---|---|
+| `raw/all-data.csv` | `src/data_loader.load_dataset()` | Sentiment Analysis for Financial News (Kaggle) | Real data, 500 rows | No action. |
+| `processed/all-data_preprocessed.csv` | `src/pipeline.save_processed()` | Created by `python main.py` | Generated (git-ignored) | No action. |
+
+## Format of `all-data.csv`
+
+The file has **no header row**. Each line has 2 columns in this order:
+
+| Position | Name in the code | Type | Values |
+|---|---|---|---|
+| 1 | `sentiment` | text | `positive`, `neutral` or `negative` |
+| 2 | `review` | text | One sentence from a financial news article |
+
+Example line:
+
+```
+neutral,"According to Gran , the company has no plans to move all production to Russia , although that is where the company is growing ."
+```
+
+**NOTE:** The file is encoded as **Latin-1**, not UTF-8. `config/settings.py` sets `DATASET_ENCODING = "latin-1"`. If you read the file as UTF-8, you get a `UnicodeDecodeError`.
+
+**NOTE:** The code names the columns `review` and `sentiment` after it reads the file. This keeps the rest of the pipeline the same for any sentiment dataset.
+
+The current file has 500 rows: 394 `positive`, 102 `neutral` and 4 `negative`.
+
+## Source
+
+Sentiment Analysis for Financial News (Financial PhraseBank), Kaggle: <https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news>
+
+The full dataset has about 4,800 sentences. To use it, download `all-data.csv` from Kaggle and replace `data/raw/all-data.csv`. To test quickly, run `python main.py --sample 500`.
+# ----- END FILE: data/README.md -----
+
+================================================================================
+NOTE: 'data/raw/all-data.csv' was ignored because it is a data file and cannot be transformed to .txt format.
+      Get it from the source described in data/README.md (Sentiment Analysis for Financial News, Kaggle).
+================================================================================
+END OF BUNDLE
+================================================================================

@@ -54,7 +54,8 @@ def simple_stemmer(text: str) -> str:
 
     Why: see knowledge.md, section "6. Stemming".
     """
-    return " ".join([_stemmer.stem(word) for word in text.split()])
+    stems: list[str] = [str(_stemmer.stem(word)) for word in text.split()]
+    return " ".join(stems)
 
 
 if __name__ == "__main__":
