@@ -60,3 +60,14 @@ This file lists each difference between the original notebook and this package.
 | 24 | `PROJECT_NAME` = `nltk_text_preprocessing`. `TOPIC` = "Text preprocessing with NLTK". `PYTHON_VERSION` = 3.10. `LLM_PROVIDER` = none. `RUN_TARGET` = local VS Code. |
 | 25 | Versions are floors (`>=`), because the notebook does not show package versions. The package was tested with nltk 3.10.4, pandas 3.0.5, seaborn 0.13.2, matplotlib 3.11.2, beautifulsoup4 4.15.0. |
 | 26 | The notebook uses no API, so the package has no `database/`, `utils/llm_client.py` or `utils/tools.py`. |
+
+## Dataset change: IMDB -> Sentiment Analysis for Financial News
+
+The project now uses `data/raw/all-data.csv` (Sentiment Analysis for Financial News) instead of the IMDB movie review dataset. The rows above describe the original IMDB version.
+
+| # | File | Change | Why |
+|---|---|---|---|
+| 1 | `config/settings.py` | `DATASET_FILENAME` is `all-data.csv`. New settings `DATASET_ENCODING` (`latin-1`), `DATASET_HAS_HEADER` (`False`) and `CSV_COLUMN_ORDER`. The output file is `all-data_preprocessed.csv`. | The new file has no header row and is not UTF-8. |
+| 2 | `src/data_loader.py` | Reads the CSV with `header=None`, explicit column names and Latin-1 encoding, then reorders the columns to `review, sentiment`. | Keeps the internal column names, so the rest of the pipeline is unchanged. |
+| 3 | `src/eda.py` | Chart title is "Sentiment distribution". | The new dataset has 3 classes, not 2. |
+| 4 | `README.md`, `data/README.md`, `knowledge.md`, `.env.example`, `.gitignore`, `pyproject.toml`, `main.py` | IMDB references now point to `all-data.csv`. | Documentation matches the data. |

@@ -1,6 +1,6 @@
-# NLTK Text Preprocessing (IMDB Movie Reviews)
+# NLTK Text Preprocessing (Sentiment Analysis for Financial News)
 
-This project cleans movie reviews with the Natural Language Toolkit (`nltk`). It removes HTML, special characters and stop words, and it reduces words to stems.
+This project cleans financial news sentences (the `all-data.csv` sentiment dataset) with the Natural Language Toolkit (`nltk`). It removes HTML, special characters and stop words, and it reduces words to stems.
 
 You learn the standard text preprocessing steps that come before a language model or a sentiment classifier.
 
@@ -65,8 +65,8 @@ nltk_text_preprocessing/
 | `config/` | Keeps all settings in one place | `DATASET_PATH`, `SPECIAL_CHAR_PATTERN` |
 | `utils/` | Keeps helpers that are not specific to text cleaning | `get_logger()`, `ensure_nltk_resources()` |
 | `src/` | Keeps the text-processing logic | `strip_html()`, `simple_stemmer()` |
-| `data/raw/` | Keeps the input data | `IMDB_Dataset.csv` |
-| `data/processed/` | Keeps the cleaned data | `IMDB_Dataset_preprocessed.csv` |
+| `data/raw/` | Keeps the input data | `all-data.csv` |
+| `data/processed/` | Keeps the cleaned data | `all-data_preprocessed.csv` |
 | `outputs/figures/` | Keeps the charts | `sentiment_distribution.png` |
 | `tests/` | Keeps the tests | `test_smoke.py` |
 | `main.py` | Runs the stages in order | `python main.py` |
@@ -154,13 +154,9 @@ Do these steps one time.
 
 2. Change the values in `.env` if necessary. All values are optional.
 
-### 3.7 Replace the placeholder data
+### 3.7 Check the data
 
-**CAUTION:** `data/raw/IMDB_Dataset.csv` contains 20 made-up reviews. Results from this file are not real results.
-
-1. Read `data/README.md`.
-2. Put the real `IMDB_Dataset.csv` in `data/raw/`.
-3. Delete `data/raw/IMDB_Dataset.PLACEHOLDER.md`.
+The input file is `data/raw/all-data.csv` (Sentiment Analysis for Financial News). It has no header row and uses Latin-1 encoding. For details, read `data/README.md`.
 
 ---
 
@@ -172,7 +168,7 @@ Do these steps one time.
 python main.py
 ```
 
-**CAUTION:** With the real dataset (50,000 reviews), the stemming step takes 2 to 3 minutes. To test quickly, use `--sample`.
+**CAUTION:** The current file has 500 rows and runs in a few seconds. With the full Kaggle dataset (about 4,800 rows), stemming takes longer. To test quickly, use `--sample`.
 
 ### 4.2 Run one stage
 
@@ -208,8 +204,7 @@ The expected result is `22 passed`.
 
 ```text
 [2] Load the dataset
-WARNING | src.data_loader | PLACEHOLDER DATA: 'IMDB_Dataset.csv' contains 20 made-up reviews. ...
-(20, 2)
+(500, 2)
 ...
 --- simple_stemmer ---
 he like lemon banana and oranges. he goe to market.
@@ -219,15 +214,15 @@ movie not great
 ...
 [5] Preprocess every review
                                               review sentiment
-0  thi film wa pleasant surpris act wa strong sto...  positive
-1  didnt enjoy thi movi plot wa slow joke flat en...  negative
+0  accord gran compani ha plan move product russi...   neutral
+1  technopoli plan develop stage area less 100000...   neutral
 ...
 SUMMARY
 1. setup: all NLTK resources are ready
-2. load: read 20 reviews from IMDB_Dataset.csv
+2. load: read 500 reviews from all-data.csv
 3. eda: class counts printed, chart saved to .../outputs/figures/sentiment_distribution.png
 4. demo: ran 10 technique examples from the notebook
-5. preprocess: cleaned 20 reviews, saved to .../data/processed/IMDB_Dataset_preprocessed.csv
+5. preprocess: cleaned 500 reviews, saved to .../data/processed/all-data_preprocessed.csv
 ```
 
 ---
@@ -242,7 +237,7 @@ This list shows what occurs when you run `python main.py`.
 4. **Stage 1 (setup):** `main.py` calls `utils/setup_resources.ensure_nltk_resources()`. The function downloads the missing NLTK data files.
 5. **Stage 2 (load):** `main.py` calls `src/data_loader.load_dataset()`.
    1. `load_dataset()` calls `config/settings.validate_settings()`. This function checks that the CSV exists.
-   2. `load_dataset()` reads `data/raw/IMDB_Dataset.csv` with `pandas`.
+   2. `load_dataset()` reads `data/raw/all-data.csv` with `pandas` (no header row, Latin-1 encoding) and names the columns `sentiment` and `review`.
    3. `load_dataset()` calls `is_placeholder_data()`. If the marker file exists, it writes a WARNING.
    4. `main.py` calls `get_review()` to show review number 5.
 6. **Stage 3 (eda):** `main.py` calls `src/eda.py`.
@@ -259,7 +254,7 @@ This list shows what occurs when you run `python main.py`.
    2. `src/text_cleaning.remove_special_characters()`
    3. `src/normalization.simple_stemmer()`
    4. `src/stopword_removal.remove_stopwords()`. This function calls `src/tokenization.tokenize()`.
-9. `main.py` calls `src/pipeline.save_processed()`. This function writes `data/processed/IMDB_Dataset_preprocessed.csv`.
+9. `main.py` calls `src/pipeline.save_processed()`. This function writes `data/processed/all-data_preprocessed.csv`.
 10. `main.py` prints a numbered summary.
 
 `tests/test_smoke.py` runs only when you run `pytest`. It imports each module and checks the notebook outputs.
@@ -274,13 +269,13 @@ This list shows what occurs when you run `python main.py`.
 | `config/settings.py` | `validate_settings()` | All modules | Nothing in the project | Reads `.env` |
 | `utils/logger.py` | `get_logger()` | All modules with logs | `config/settings.py` | Writes log lines to the terminal |
 | `utils/setup_resources.py` | `ensure_nltk_resources()` | `main.py`, tests | `nltk.download()` | Writes NLTK data files |
-| `src/data_loader.py` | `load_dataset()`, `is_placeholder_data()`, `get_review()` | `main.py`, tests | `config/settings.validate_settings()` | Reads `data/raw/IMDB_Dataset.csv` |
+| `src/data_loader.py` | `load_dataset()`, `is_placeholder_data()`, `get_review()` | `main.py`, tests | `config/settings.validate_settings()` | Reads `data/raw/all-data.csv` |
 | `src/eda.py` | `describe_dataset()`, `sentiment_counts()`, `plot_sentiment_distribution()` | `main.py`, tests | `seaborn`, `matplotlib` | Writes `outputs/figures/sentiment_distribution.png` |
 | `src/text_cleaning.py` | `strip_html()`, `remove_between_square_brackets()`, `denoise_text()`, `remove_special_characters()` | `src/pipeline.py` | `BeautifulSoup`, `re` | Nothing |
 | `src/normalization.py` | `lemmatize_word()`, `simple_stemmer()` | `src/pipeline.py` | `WordNetLemmatizer`, `PorterStemmer` | Reads NLTK `wordnet` data |
 | `src/tokenization.py` | `tokenize()`, `pos_tag_tokens()` | `src/pipeline.py`, `src/stopword_removal.py` | `word_tokenize`, `nltk.pos_tag` | Reads NLTK `punkt_tab` and tagger data |
 | `src/stopword_removal.py` | `get_stopword_list()`, `build_updated_stopword_list()`, `get_updated_stopword_list()`, `remove_stopwords()` | `src/pipeline.py` | `src/tokenization.tokenize()` | Reads NLTK `stopwords` data |
-| `src/pipeline.py` | `run_demos()`, `preprocess_reviews()`, `save_processed()` | `main.py` | All other `src` modules | Writes `data/processed/IMDB_Dataset_preprocessed.csv` |
+| `src/pipeline.py` | `run_demos()`, `preprocess_reviews()`, `save_processed()` | `main.py` | All other `src` modules | Writes `data/processed/all-data_preprocessed.csv` |
 | `tests/test_smoke.py` | 22 tests | `pytest` | All modules | Writes temporary files only |
 
 ---
@@ -294,12 +289,15 @@ All settings are in `config/settings.py`. Some settings also come from `.env`.
 | `PROJECT_ROOT` | Folder of the project | Base for all paths | No |
 | `DATA_DIR`, `RAW_DIR`, `PROCESSED_DIR` | `data/`, `data/raw/`, `data/processed/` | Data folders | No |
 | `OUTPUT_DIR`, `FIGURES_DIR` | `outputs/`, `outputs/figures/` | Output folders | No |
-| `DATASET_FILENAME` | `IMDB_Dataset.csv` | Name of the input file | Yes, if your file has a different name |
-| `DATASET_PATH` | `data/raw/IMDB_Dataset.csv` | Full path of the input file | Use `--data` instead |
-| `PLACEHOLDER_MARKER_PATH` | `data/raw/IMDB_Dataset.PLACEHOLDER.md` | Marker that shows placeholder data | No |
-| `PROCESSED_DATASET_PATH` | `data/processed/IMDB_Dataset_preprocessed.csv` | Output CSV | Yes |
+| `DATASET_FILENAME` | `all-data.csv` | Name of the input file | Yes, if your file has a different name |
+| `DATASET_PATH` | `data/raw/all-data.csv` | Full path of the input file | Use `--data` instead |
+| `DATASET_ENCODING` | `latin-1` | Text encoding of the input file | Only if your file uses another encoding |
+| `DATASET_HAS_HEADER` | `False` | Whether the first CSV line has column names | Only if your file has a header row |
+| `CSV_COLUMN_ORDER` | `("sentiment", "review")` | Column order in a file without a header | Only if your file has a different order |
+| `PLACEHOLDER_MARKER_PATH` | `data/raw/all-data.PLACEHOLDER.md` | Marker that shows placeholder data (not present) | No |
+| `PROCESSED_DATASET_PATH` | `data/processed/all-data_preprocessed.csv` | Output CSV | Yes |
 | `SENTIMENT_PLOT_PATH` | `outputs/figures/sentiment_distribution.png` | Output chart | Yes |
-| `DATASET_SOURCE_URL` | Stanford dataset page | Reference only | Yes |
+| `DATASET_SOURCE_URL` | Kaggle "Sentiment Analysis for Financial News" page | Reference only | Yes |
 | `TEXT_COLUMN` | `review` | Column with the text | Only if your CSV is different |
 | `LABEL_COLUMN` | `sentiment` | Column with the label | Only if your CSV is different |
 | `PREVIEW_ROWS` | `10` | Rows shown by the load stage | Yes |
@@ -321,7 +319,7 @@ All settings are in `config/settings.py`. Some settings also come from `.env`.
 
 | File | Status | Action |
 |---|---|---|
-| `data/raw/IMDB_Dataset.csv` | ⚠️ PLACEHOLDER (20 made-up rows) | Replace it with the real 50,000-row file. Then delete `data/raw/IMDB_Dataset.PLACEHOLDER.md`. See `data/README.md`. |
+| `data/raw/all-data.csv` | Real data, 500 rows (394 positive, 102 neutral, 4 negative) | No action. See `data/README.md`. |
 
 ---
 
@@ -334,10 +332,11 @@ All settings are in `config/settings.py`. Some settings also come from `.env`.
 | VS Code shows yellow lines under imports | VS Code uses the wrong interpreter. | Select the `.venv` interpreter (section 3.3). |
 | `LookupError: Resource punkt_tab not found` (or `stopwords`, `wordnet`) | The NLTK data files are missing. | Run `python -m utils.setup_resources`. |
 | `Missing NLTK resources: ...` | The download failed. | Check the internet connection. Then run `python -m utils.setup_resources` again. |
-| `ERROR: Dataset not found` | The CSV is not in `data/raw/`. | Put `IMDB_Dataset.csv` in `data/raw/`. |
-| `WARNING ... PLACEHOLDER DATA` | The placeholder marker file exists. | Replace the CSV. Then delete `data/raw/IMDB_Dataset.PLACEHOLDER.md`. |
-| `ValueError: ... must have the columns` | The CSV has different column names. | Rename the columns to `review` and `sentiment`. |
-| The run stops for minutes at `simple_stemmer` | Stemming 50,000 reviews takes time. | Wait 2 to 3 minutes, or use `--sample 2000`. |
+| `ERROR: Dataset not found` | The CSV is not in `data/raw/`. | Put `all-data.csv` in `data/raw/`. |
+| `UnicodeDecodeError: 'utf-8' codec can't decode` | The file is read with the wrong encoding. | Keep `DATASET_ENCODING = "latin-1"` in `config/settings.py`. |
+| `WARNING ... PLACEHOLDER DATA` | The placeholder marker file exists. | Delete `data/raw/all-data.PLACEHOLDER.md`. |
+| `ValueError: ... must have the columns` | The CSV has a header row or a different column order. | Check `DATASET_HAS_HEADER` and `CSV_COLUMN_ORDER` in `config/settings.py`. |
+| The run stops for minutes at `simple_stemmer` | Stemming a large file takes time. | Wait, or use `--sample 500`. |
 | `pip` shows a version conflict | Old packages are in the environment. | Delete `.venv`. Do sections 3.2 and 3.4 again. |
 | No chart window opens | `SHOW_PLOTS` is `false` by default. | Use `--show-plots`. The PNG file is always saved. |
 | PowerShell blocks `Activate.ps1` | The execution policy blocks scripts. | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |

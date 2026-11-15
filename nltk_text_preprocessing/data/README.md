@@ -4,30 +4,34 @@ This file lists each data file that the project reads or writes.
 
 ## Input and output files
 
-| File | Used by (module.function) | Source (from notebook) | Status | Action required |
+| File | Used by (module.function) | Source | Status | Action required |
 |---|---|---|---|---|
-| `raw/IMDB_Dataset.csv` | `src/data_loader.load_dataset()` | Hidden Colab cell "Download the IMDB Movie Review dataset". The notebook links to the Stanford Large Movie Review Dataset page. | ⚠️ PLACEHOLDER (20 made-up rows) | Replace with the real 50,000-row file. Then delete `raw/IMDB_Dataset.PLACEHOLDER.md`. |
-| `raw/IMDB_Dataset.PLACEHOLDER.md` | `src/data_loader.is_placeholder_data()` | Created for this package | Marker file | Delete it after you replace the CSV. |
-| `processed/IMDB_Dataset_preprocessed.csv` | `src/pipeline.save_processed()` | Created by `python main.py` | Generated (git-ignored) | No action. |
+| `raw/all-data.csv` | `src/data_loader.load_dataset()` | Sentiment Analysis for Financial News (Kaggle) | Real data, 500 rows | No action. |
+| `processed/all-data_preprocessed.csv` | `src/pipeline.save_processed()` | Created by `python main.py` | Generated (git-ignored) | No action. |
 
-## Required format of `IMDB_Dataset.csv`
+## Format of `all-data.csv`
 
-| Column | Type | Values |
-|---|---|---|
-| `review` | text | The full review. It can contain HTML such as `<br />`. |
-| `sentiment` | text | `positive` or `negative` |
+The file has **no header row**. Each line has 2 columns in this order:
 
-The real file has 50,000 rows: 25,000 `positive` and 25,000 `negative`.
+| Position | Name in the code | Type | Values |
+|---|---|---|---|
+| 1 | `sentiment` | text | `positive`, `neutral` or `negative` |
+| 2 | `review` | text | One sentence from a financial news article |
 
-## How to get the real file
+Example line:
 
-The notebook downloads the CSV in a hidden cell. The PDF does not show the code or the URL of that cell.
+```
+neutral,"According to Gran , the company has no plans to move all production to Russia , although that is where the company is growing ."
+```
 
-1. Open the IISc / TalentSprint course page for this notebook.
-2. Download `IMDB_Dataset.csv` from the course material.
-3. Copy the file to `data/raw/IMDB_Dataset.csv`.
-4. Delete `data/raw/IMDB_Dataset.PLACEHOLDER.md`.
+**NOTE:** The file is encoded as **Latin-1**, not UTF-8. `config/settings.py` sets `DATASET_ENCODING = "latin-1"`. If you read the file as UTF-8, you get a `UnicodeDecodeError`.
 
-**NOTE:** The notebook cites the original source: <http://ai.stanford.edu/~amaas/data/sentiment/>. That page gives the reviews as many small text files, not as one CSV. A CSV version with the same name (`IMDB_Dataset.csv`, "IMDB Dataset of 50K Movie Reviews") is also available on Kaggle.
+**NOTE:** The code names the columns `review` and `sentiment` after it reads the file. This keeps the rest of the pipeline the same for any sentiment dataset.
 
-**CAUTION:** The real file is about 63 MB. GitHub accepts files up to 100 MB, but large files make the repository slow to clone. To keep the file out of Git, remove the `#` in front of `data/raw/IMDB_Dataset.csv` in `.gitignore`.
+The current file has 500 rows: 394 `positive`, 102 `neutral` and 4 `negative`.
+
+## Source
+
+Sentiment Analysis for Financial News (Financial PhraseBank), Kaggle: <https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news>
+
+The full dataset has about 4,800 sentences. To use it, download `all-data.csv` from Kaggle and replace `data/raw/all-data.csv`. To test quickly, run `python main.py --sample 500`.

@@ -23,8 +23,8 @@ outputs/*
 data/processed/*
 !data/processed/.gitkeep
 
-# --- Large real dataset (about 63 MB). Remove this line if you want to commit it. ---
-# data/raw/IMDB_Dataset.csv
+# --- Raw dataset. Remove the `#` below if you do NOT want to commit it. ---
+# data/raw/all-data.csv
 
 # --- OS / editor ---
 .DS_Store

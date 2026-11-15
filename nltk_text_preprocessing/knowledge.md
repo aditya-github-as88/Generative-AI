@@ -8,7 +8,7 @@ This guide explains what each part of the code does and why it is necessary. Rea
 
 ## Overview
 
-Computers cannot use raw review text directly. Raw text contains HTML tags, punctuation, many forms of one word, and many common words with little meaning. Text preprocessing removes this noise and makes the words uniform. The result is a smaller, cleaner text that a classifier or a language model can use better. This project applies these steps to 50,000 IMDB movie reviews with the `nltk` library.
+Computers cannot use raw review text directly. Raw text contains HTML tags, punctuation, many forms of one word, and many common words with little meaning. Text preprocessing removes this noise and makes the words uniform. The result is a smaller, cleaner text that a classifier or a language model can use better. This project applies these steps to the financial news sentences in `all-data.csv` (Sentiment Analysis for Financial News) with the `nltk` library.
 
 **Role in Generative AI:** NLTK does not generate text. It cleans and structures text before a model uses it. It can also analyze model outputs, for example keyword frequency or repetition.
 
@@ -43,7 +43,7 @@ This diagram shows how the data moves from `data/raw` through the `src` modules 
 
 ```mermaid
 flowchart LR
-    R[(data/raw/IMDB_Dataset.csv)] --> L[data_loader.load_dataset]
+    R[(data/raw/all-data.csv)] --> L[data_loader.load_dataset]
     L --> E[eda.py]
     E --> P[(outputs/figures/*.png)]
     L --> D[text_cleaning.denoise_text]
@@ -171,23 +171,24 @@ All other steps work on the DataFrame. A clear check at the start gives a clear 
 - A CSV file keeps a table as plain text. A comma separates the columns.
 - A review can contain commas. So the CSV puts such a review between double quotes.
 - `pd.read_csv()` reads the quotes correctly and makes one row per review.
-- The IMDB dataset is a **binary sentiment classification** dataset. Each review has one of two labels.
+- The financial news dataset is a **3-class sentiment classification** dataset. Each sentence has one label: `positive`, `neutral` or `negative`.
+- `all-data.csv` has **no header row** and uses **Latin-1** encoding. So the code calls `pd.read_csv(path, header=None, names=[...], encoding="latin-1")`.
 
 **Worked example:**
 Input file (2 rows):
 ```
-review,sentiment
-"A wonderful little production. <br /><br />The filming...",positive
-"Basically there's a family where a little boy...",negative
+neutral,"According to Gran , the company has no plans to move all production to Russia ..."
+negative,"The international electronic industry company Elcoteq has laid off tens of employees ..."
 ```
-Process: `pd.read_csv()`.
-Output: a DataFrame with shape `(2, 2)`.
+Process: `pd.read_csv(path, header=None, names=["sentiment", "review"], encoding="latin-1")`, then reorder the columns to `review, sentiment`.
+Output: a DataFrame with shape `(2, 2)` and the columns `review` and `sentiment`.
 
 **Code walkthrough:**
 | Line / statement | What it does | Why |
 |---|---|---|
 | `validate_settings(path)` | Raises `FileNotFoundError` if the file is missing | To give a clear action to the user |
-| `df = pd.read_csv(path)` | Reads the CSV into a DataFrame | Notebook: `df = pd.read_csv('IMDB_Dataset.csv')` |
+| `pd.read_csv(path, header=None, names=list(CSV_COLUMN_ORDER), encoding=DATASET_ENCODING)` | Reads the CSV and names the columns | The file has no header row and is not UTF-8 |
+| `df = df[[TEXT_COLUMN, LABEL_COLUMN]]` | Puts the columns in the order `review, sentiment` | The rest of the pipeline expects these names |
 | `missing = {TEXT_COLUMN, LABEL_COLUMN} - set(df.columns)` | Finds missing columns | To stop early with a clear message |
 | `if is_placeholder_data(...)` | Checks for the marker file | To warn that results are not real |
 | `df.head(sample_size)` | Keeps the first N rows | To make test runs fast |
@@ -213,7 +214,7 @@ You must know the data before you clean it. The class balance tells you if a mod
 
 **Theory:**
 - `describe()` on text columns gives: `count`, `unique`, `top`, `freq`.
-- If `unique` < `count`, the dataset has duplicate rows. The real dataset has 49,582 unique reviews in 50,000 rows.
+- If `unique` < `count`, the dataset has duplicate rows. The current dataset has 499 unique sentences in 500 rows.
 - The class ratio shows the balance:
 
 $$\text{balance ratio} = \frac{n_{\text{minority}}}{n_{\text{majority}}}$$
@@ -226,7 +227,7 @@ $$\text{balance ratio} = \frac{n_{\text{minority}}}{n_{\text{majority}}}$$
 - A ratio of 1.0 means a perfectly balanced dataset.
 
 **Worked example:**
-Input: the real dataset. Process: `value_counts()`. Output: `positive 25000`, `negative 25000`. Ratio = 25000 / 25000 = 1.0. The dataset is balanced.
+Input: `all-data.csv`. Process: `value_counts()`. Output: `positive 394`, `neutral 102`, `negative 4`. Ratio = 4 / 394 ≈ 0.01. The dataset is strongly **imbalanced**: a model sees very few negative examples, so accuracy alone is not a fair measure.
 
 **Code walkthrough:**
 | Line / statement | What it does | Why |
@@ -314,7 +315,7 @@ Input: `I didn't enjoy it.` → Output: `I didnt enjoy it`.
 **Code walkthrough:**
 | Line / statement | What it does | Why |
 |---|---|---|
-| `re.compile(SPECIAL_CHAR_PATTERN)` | Compiles the pattern one time | It is faster on 50,000 reviews |
+| `re.compile(SPECIAL_CHAR_PATTERN)` | Compiles the pattern one time | It is faster on large datasets |
 | `_SPECIAL_CHAR_REGEX.sub("", text)` | Removes each match | Notebook: `re.sub(pattern, '', text)` |
 
 **Common mistakes:**
@@ -695,6 +696,6 @@ Output review 2: `thought thi wa wonder way spend time hot summe...`
 | [NLTK data](https://www.nltk.org/data.html) | How to install NLTK resources |
 | [Beautiful Soup documentation](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) | HTML parsing |
 | [Regular Expressions in Python (Real Python)](https://realpython.com/regex-python/) | The link that the notebook cites |
-| [Large Movie Review Dataset (Stanford)](http://ai.stanford.edu/~amaas/data/sentiment/) | The dataset source that the notebook cites |
+| [Sentiment Analysis for Financial News (Kaggle)](https://www.kaggle.com/datasets/ankurzing/sentiment-analysis-for-financial-news) | The source of `all-data.csv` |
 | [Python `re` module](https://docs.python.org/3/library/re.html) | Regular expression syntax |
 | [pandas documentation](https://pandas.pydata.org/docs/) | `read_csv`, `apply`, `value_counts` |
